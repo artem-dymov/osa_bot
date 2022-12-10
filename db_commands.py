@@ -1,5 +1,5 @@
 from database import db
-from models import User, Teacher, Teacher_classes, Vote, Vote_classes
+from models import User, Teacher, Teacher_classes, Vote, Vote_classes, Group, Group_classes
 from gino.schema import GinoSchemaVisitor
 
 from typing import Union
@@ -142,3 +142,26 @@ async def add_vote(faculty: str, user_id: int, teacher_id: int,
                                              marks=marks, questions_id=questions_id).create()
 
     return vote
+
+
+async def get_all_groups_names(faculty: str) -> list[str]:
+    groups: list[Group] = await Group_classes[faculty].query.gino.all()
+
+    names = []
+    for i in groups:
+        names.append(i.name)
+
+    return names
+
+
+async def is_group_in_db(faculty: str, group: str) -> bool:
+    groups = await get_all_groups_names(faculty)
+    if group.strip() in groups:
+        return True
+    else:
+        return False
+
+
+async def add_groups(faculty: str, groups: list[str]) -> None:
+    for i in groups:
+        group: Group = await Group_classes[faculty](name=i).create()

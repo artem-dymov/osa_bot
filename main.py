@@ -8,10 +8,15 @@ async def main():
 
     # your code here
     # <example 1
-    votes: list[Vote] = await db_commands.get_all_votes("FBME")
-    for i in votes:
-        print(i.marks)
+    # votes: list[Vote] = await db_commands.get_all_votes("FBME")
+    # for i in votes:
+    #     print(i.marks)
     # example>
+
+    #checking groups
+    # print(await db_commands.get_all_groups_names('FBME'))
+    # print(await db_commands.is_group_in_db('бс-11'))
+    await db_commands.add_groups('FBME', ['бс-23'])
 
     # Пример записи голоса из бота в базу
     # questions_id = [1, 2, 3]
@@ -29,6 +34,7 @@ async def main():
     # получение препода по айдишнику с бд
     # teacher = await db_commands.get_teacher('FBME', 5)
     # print(teacher.groups)
+
 
 
 

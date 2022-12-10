@@ -7,9 +7,6 @@ faculties = ('FBME', 'IPT')
 faculties_ukr = ('ФБМІ', 'ФТІ')
 
 
-
-
-
 class User(db.Model):
     __table_args__ = dict(schema='public')
     __tablename__ = 'users'
@@ -62,3 +59,17 @@ for i in faculties:
                                 "marks": Column(ARRAY(INTEGER)),
                                 "questions_id": Column(ARRAY(INTEGER))}))
 
+
+class Group(db.Model):
+    __tablename__ = 'groups'
+    query: sql.select
+
+    id = Column(INTEGER, Sequence("groups_id_seq"), primary_key=True)
+    name = Column(TEXT)
+
+
+Group_classes = {}  # : dict[str, Group]
+for i in faculties:
+    Group_classes[f"{i}"] = (type(f"Group_{i}", (db.Model,), {"__table_args__": {"schema": f"{i}"} , "__tablename__": "groups",
+                                "id": Column(INTEGER, Sequence("votes_id_seq", schema=i), primary_key=True),
+                                "name": Column(TEXT)}))
