@@ -4,6 +4,11 @@ from sqlalchemy import sql, Column, Sequence, INTEGER, TEXT, ARRAY, BIGINT
 
 
 faculties = ['FBME', 'IPT']
+faculties_ukr = ['ФБМІ', 'ФТІ']
+
+
+
+
 
 class User(db.Model):
     __table_args__ = dict(schema='public')
@@ -25,6 +30,7 @@ class Teacher(db.Model):
     full_name = Column(TEXT)
     type = Column(TEXT)
     groups = Column(ARRAY(TEXT))
+
 
 
 Teacher_classes: Teacher = {}  # : dict[str, Teacher]

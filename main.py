@@ -8,8 +8,8 @@ async def main():
 
     # your code here
     # <example 1
-    # user: User = await db_commands.get_user(4)
-    # print(user.faculty)
+    user: User = await db_commands.get_user(4)
+    print(user.faculty)
     # example>
 
     # Пример записи голоса из бота в базу
@@ -18,9 +18,9 @@ async def main():
     # await db_commands.add_vote('FBME', 5, 2, marks, questions_id)
 
     # Пример получения всех голосов с опроса по факультету и вывод оценок
-    votes = await db_commands.get_all_votes('FBME')
-    for vote in votes:
-        print(vote.marks)
+    # votes = await db_commands.get_all_votes('FBME')
+    # for vote in votes:
+    #     print(vote.marks)
 
     # добавление препода
     # await db_commands.add_teacher('FBME', 'Bakun V B', 'practice', [['bs-11', 'bs-12', 'bs-13'], ['bs-11']])
@@ -34,3 +34,5 @@ async def main():
     await drop_connection()
 
 asyncio.get_event_loop().run_until_complete(main())
+
+

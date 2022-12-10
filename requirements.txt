@@ -1,0 +1,2 @@
+gino==1.0.1
+SQLAlchemy==1.3.24

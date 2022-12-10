@@ -10,3 +10,4 @@ async def create_db():
 
 async def drop_connection():
     await db.pop_bind().close()
+
