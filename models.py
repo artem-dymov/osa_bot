@@ -3,8 +3,8 @@ from database import db
 from sqlalchemy import sql, Column, Sequence, INTEGER, TEXT, ARRAY, BIGINT
 
 
-faculties = ['FBME', 'IPT']
-faculties_ukr = ['ФБМІ', 'ФТІ']
+faculties = ('FBME', 'IPT')
+faculties_ukr = ('ФБМІ', 'ФТІ')
 
 
 
@@ -36,11 +36,10 @@ class Teacher(db.Model):
 Teacher_classes: Teacher = {}  # : dict[str, Teacher]
 for i in faculties:
     Teacher_classes[f"{i}"] = (type(f"Teacher_{i}", (db.Model,), {"__table_args__" : {"schema" : f"{i}"} , "__tablename__": "teachers",
-                                "id" : Column(INTEGER, Sequence("teachers_id_seq", schema=i), primary_key=True),
-                                "full_name" : Column(TEXT),
-                                "type" : Column(TEXT),
-                                "groups" : Column(ARRAY(TEXT))}))
-
+                                "id": Column(INTEGER, Sequence("teachers_id_seq", schema=i), primary_key=True),
+                                "full_name": Column(TEXT),
+                                "type": Column(TEXT),
+                                "groups": Column(ARRAY(TEXT))}))
 
 
 class Vote(db.Model):

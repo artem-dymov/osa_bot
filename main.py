@@ -8,8 +8,9 @@ async def main():
 
     # your code here
     # <example 1
-    user: User = await db_commands.get_user(4)
-    print(user.faculty)
+    votes: list[Vote] = await db_commands.get_all_votes("FBME")
+    for i in votes:
+        print(i.marks)
     # example>
 
     # Пример записи голоса из бота в базу
@@ -34,5 +35,4 @@ async def main():
     await drop_connection()
 
 asyncio.get_event_loop().run_until_complete(main())
-
 
