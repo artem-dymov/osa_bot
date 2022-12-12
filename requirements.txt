@@ -1,2 +1,5 @@
 gino==1.0.1
 SQLAlchemy==1.3.24
+aiogram==2.22.2
+
+requests==2.25.1

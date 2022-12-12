@@ -1,5 +1,4 @@
-from gino import Gino
-from database import db
+from utils.db_api.database import db
 from sqlalchemy import sql, Column, Sequence, INTEGER, TEXT, ARRAY, BIGINT
 
 

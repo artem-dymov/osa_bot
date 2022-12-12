@@ -1,6 +1,4 @@
-from database import db
-from models import User, Teacher, Teacher_classes, Vote, Vote_classes, Group, Group_classes
-from gino.schema import GinoSchemaVisitor
+from utils.db_api.models import User, Teacher, Teacher_classes, Vote, Vote_classes, Group, Group_classes
 
 from typing import Union
 
@@ -18,6 +16,15 @@ async def get_user(id: int) -> User:
 async def add_user(tg_id: int, faculty: str, group, username=None) -> User:
     new_user: User = await User(tg_id=tg_id, username=username, faculty=faculty, group=group).create()
     return new_user
+
+
+async def is_user_in_db(tg_id: int):
+    user: User = await get_user_by_tg_id(tg_id)
+
+    if user is not None:
+        return True
+    else:
+        return False
 
 
 # adds Nones to matrix if it is needed, returning lists without nested lists
