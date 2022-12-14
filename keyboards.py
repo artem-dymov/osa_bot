@@ -7,6 +7,7 @@ from aiogram import types
 faculty_cd: CallbackData = CallbackData("id", "faculty_index")
 
 
+
 async def faculty_markup():
     markup = InlineKeyboardMarkup()
     for i in faculties_ukr:
@@ -14,5 +15,5 @@ async def faculty_markup():
             InlineKeyboardButton(text=i, callback_data=faculty_cd.new(faculties_ukr.index(i)))
         )
 
-
     return markup
+

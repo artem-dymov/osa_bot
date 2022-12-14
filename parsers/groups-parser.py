@@ -14,16 +14,17 @@ async def main():
     await create_db()
 
     for faculty in faculties_ukr:
-        groups = []
+        groups = {}
+
         for i in py_res['data']:
             if i['faculty'] == faculty:
                 print(i['name'])
-                groups.append(i['name'])
+                groups[i['id']] = i['name']
 
-            if len(groups) > 0:
-                faculty_index = faculties_ukr.index(faculty)
-                await db_commands.add_groups(faculties[faculty_index], groups)
-            groups.clear()
+        if len(groups) > 0:
+            faculty_index = faculties_ukr.index(faculty)
+            await db_commands.add_groups(faculties[faculty_index], groups)
+        groups.clear()
 
     await drop_connection()
 

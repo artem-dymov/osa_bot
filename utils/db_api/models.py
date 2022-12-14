@@ -1,9 +1,9 @@
 from utils.db_api.database import db
-from sqlalchemy import sql, Column, Sequence, INTEGER, TEXT, ARRAY, BIGINT
+from sqlalchemy import sql, Column, Sequence, INTEGER, TEXT, ARRAY, BIGINT, JSON
 
 
-faculties = ('FBME', 'IPT')
-faculties_ukr = ('ФБМІ', 'ФТІ')
+faculties = ('fbme', 'ipp', 'fl', 'fel', 'its', 'ipt', 'imi')
+faculties_ukr = ('ФБМІ', 'ВПІ', 'ФЛ', 'ФЕЛ', 'ІТС', 'ФТІ', 'ММІ')
 
 
 class User(db.Model):
@@ -15,7 +15,7 @@ class User(db.Model):
     tg_id = Column(BIGINT)
     username = Column(TEXT)
     faculty = Column(TEXT)
-    group = Column(TEXT)
+    group_id = Column(INTEGER)
 
 
 class Teacher(db.Model):
@@ -25,8 +25,6 @@ class Teacher(db.Model):
     id = Column(INTEGER, Sequence("teachers_id_seq"), primary_key=True)
     full_name = Column(TEXT)
     type = Column(TEXT)
-    groups = Column(ARRAY(TEXT))
-
 
 
 Teacher_classes: Teacher = {}  # : dict[str, Teacher]
@@ -34,8 +32,7 @@ for i in faculties:
     Teacher_classes[f"{i}"] = (type(f"Teacher_{i}", (db.Model,), {"__table_args__" : {"schema" : f"{i}"} , "__tablename__": "teachers",
                                 "id": Column(INTEGER, Sequence("teachers_id_seq", schema=i), primary_key=True),
                                 "full_name": Column(TEXT),
-                                "type": Column(TEXT),
-                                "groups": Column(ARRAY(TEXT))}))
+                                "type": Column(TEXT)}))
 
 
 class Vote(db.Model):
@@ -45,8 +42,7 @@ class Vote(db.Model):
     id = Column(INTEGER, Sequence("votes_id_seq"), primary_key=True)
     user_id = Column(INTEGER)
     teacher_id = Column(INTEGER)
-    marks = Column(ARRAY(INTEGER))
-    questions_id = Column(ARRAY(INTEGER))
+    results = Column(JSON)
 
 
 Vote_classes: Vote = {}  # : dict[str, Vote]
@@ -55,8 +51,7 @@ for i in faculties:
                                 "id": Column(INTEGER, Sequence("votes_id_seq", schema=i), primary_key=True),
                                 "user_id": Column(INTEGER),
                                 "teacher_id": Column(INTEGER),
-                                "marks": Column(ARRAY(INTEGER)),
-                                "questions_id": Column(ARRAY(INTEGER))}))
+                                "results": Column(JSON)}))
 
 
 class Group(db.Model):
@@ -65,10 +60,14 @@ class Group(db.Model):
 
     id = Column(INTEGER, Sequence("groups_id_seq"), primary_key=True)
     name = Column(TEXT)
+    schedule_id = Column(INTEGER)
+    teachers = Column(JSON)
 
 
 Group_classes = {}  # : dict[str, Group]
 for i in faculties:
     Group_classes[f"{i}"] = (type(f"Group_{i}", (db.Model,), {"__table_args__": {"schema": f"{i}"} , "__tablename__": "groups",
                                 "id": Column(INTEGER, Sequence("votes_id_seq", schema=i), primary_key=True),
-                                "name": Column(TEXT)}))
+                                "name": Column(TEXT),
+                                "schedule_id": Column(TEXT),
+                                "teachers": Column(JSON)}))
