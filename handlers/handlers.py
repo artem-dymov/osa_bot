@@ -12,6 +12,7 @@ from states import Registering
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher import FSMContext
 
+
 @dp.message_handler(commands=['test'])
 async def test_handler(message: types.Message, state: FSMContext):
     votes = await db_commands.get_all_votes('fbme')
@@ -32,7 +33,6 @@ async def save_faculty(faculty_index):
     print("User chosed faculty: " + f"{faculties[int(faculty_index)]}")
     faculty_ukr = faculties_ukr[int(faculty_index)]
     await db_commands.add_user()
-
 
 
 @dp.callback_query_handler(faculty_cd.filter())

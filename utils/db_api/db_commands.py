@@ -1,3 +1,4 @@
+
 from utils.db_api.models import User, Teacher, Teacher_classes, Vote, Vote_classes, Group, Group_classes
 from typing import Union
 
@@ -36,14 +37,18 @@ async def get_teacher(faculty: str, id: int) -> Teacher:
     return teacher
 
 
+async def get_teacher_by_schedule_id(faculty: str, schedule_id) -> Teacher:
+    teacher: Teacher = await Teacher_classes[faculty].query.where(Teacher_classes[faculty].schedule_id == schedule_id).gino.first()
+    return teacher
+
+
 async def get_all_teachers(faculty: str) -> Teacher:
     teachers: Teacher = await Teacher_classes[faculty].query.gino.all()
     return teachers
 
 
-async def add_teacher(faculty: str, full_name: str, type: str) -> Teacher:
-    new_teacher: Teacher = await Teacher_classes[faculty](full_name=full_name, type=type).create()
-
+async def add_teacher(faculty: str, full_name: str, type: str, schedule_id=None) -> Teacher:
+    new_teacher: Teacher = await Teacher_classes[faculty](full_name=full_name, type=type, schedule_id=schedule_id).create()
     return new_teacher
 
 
@@ -74,6 +79,16 @@ async def add_vote(faculty: str, user_id: int, teacher_id: int, results: dict) -
     return vote
 
 
+async def get_all_groups(faculty: str) -> list[Group]:
+    groups: list[Group] = await Group_classes[faculty].query.gino.all()
+    return groups
+
+
+async def get_group_by_schedule_id(faculty: str, schedule_id: int) -> Group:
+    group: Group = await Group_classes[faculty].query.where(schedule_id=schedule_id).gino.first()
+    return group
+
+
 async def get_all_groups_names(faculty: str) -> list[str]:
     groups: list[Group] = await Group_classes[faculty].query.gino.all()
     names = []
@@ -91,15 +106,37 @@ async def get_all_groups_schedule_id(faculty: str) -> list[str]:
     return schedule_ids
 
 
-async def is_group_in_db(faculty: str, group: str) -> bool:
+async def is_group_in_db(faculty: str, group_name: str) -> bool:
     groups = await get_all_groups_names(faculty)
-    if group.strip() in groups:
+    if group_name in groups:
         return True
     else:
         return False
 
 
-#! rewrite
-async def add_groups(faculty: str, groups: dict[str, str]) -> None:
-    for i, j in groups.items():
-        await Group_classes[faculty](schedule_id=i, name=j).create()
+async def get_group_by_name(faculty: str, group_name: str) -> Group:
+    group = await Group_classes[faculty].query.where(name=group_name).gino.first()
+    return group
+
+
+async def is_teacher_in_db(faculty: str, schedule_id: str) -> bool:
+    teacher = await Teacher_classes[faculty].query.where(schedule_id == schedule_id).gino.first()
+    if teacher is None:
+        return True
+    else:
+        return False
+
+
+
+async def add_group(faculty: str, name: str, schedule_id: str, teachers: list[dict]) -> None:
+    await Group_classes[faculty](schedule_id=schedule_id, name=name, teachers=teachers).create()
+
+
+async def update_group(faculty, schedule_id, **kwargs):
+    group: Group = get_group_by_schedule_id(faculty, schedule_id)
+    await group.update(**kwargs).apply()
+
+async def update_teacher(faculty, schedule_id, full_name, type):
+    teacher: Teacher = await get_teacher_by_schedule_id(faculty, schedule_id)
+    await teacher.update(full_name=full_name, schedule_id=schedule_id, type=type).apply()
+    return teacher

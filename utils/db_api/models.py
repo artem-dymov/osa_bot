@@ -25,6 +25,7 @@ class Teacher(db.Model):
     id = Column(INTEGER, Sequence("teachers_id_seq"), primary_key=True)
     full_name = Column(TEXT)
     type = Column(TEXT)
+    schedule_id = Column(TEXT)
 
 
 Teacher_classes: Teacher = {}  # : dict[str, Teacher]
@@ -32,7 +33,8 @@ for i in faculties:
     Teacher_classes[f"{i}"] = (type(f"Teacher_{i}", (db.Model,), {"__table_args__" : {"schema" : f"{i}"} , "__tablename__": "teachers",
                                 "id": Column(INTEGER, Sequence("teachers_id_seq", schema=i), primary_key=True),
                                 "full_name": Column(TEXT),
-                                "type": Column(TEXT)}))
+                                "type": Column(TEXT),
+                                "schedule_id": Column(TEXT)}))
 
 
 class Vote(db.Model):
