@@ -52,6 +52,7 @@ async def main():
                             new_teacher = await db_commands.get_teacher_by_schedule_id(faculty, lecturer_id)
 
                             if new_teacher is not None:
+                                print('1')
                                 if new_teacher.type == teacher_type:
                                     pass
                                 if new_teacher.type != teacher_type:
@@ -66,19 +67,27 @@ async def main():
                                         await db_commands.update_teacher(faculty, lecturer_id, new_teacher.full_name,
                                                                          'both')
                             elif new_teacher is None:
+                                print('2')
                                 await db_commands.add_teacher(faculty, pair['teacherName'], teacher_type, lecturer_id)
+
 
                             new_teacher = await db_commands.get_teacher_by_schedule_id(faculty, lecturer_id)
 
+                            print(f"{new_teacher} + {pair['teacherName']} + {lecturer_id}, {teacher_type}")
+                            print(f"itering {new_teacher.full_name}")
+                            repeat = False
                             for i in new_group['teachers']:
-                                if new_teacher.id == i['id']:
-                                    pass
-                                elif new_teacher.id != i['id']:
-                                    new_group['teachers'].append({
-                                        'id': new_teacher.id,
-                                        'full_name': new_teacher.full_name,
-                                        'type': teacher_type
-                                    })
+                                print(f"{new_teacher.full_name} = {i['full_name']} --- {new_teacher.id} = {i['id']}")
+                                if i['id'] == new_teacher.id:
+                                    repeat = True
+
+                            if repeat is False:
+                                new_group['teachers'].append({
+                                    'id': new_teacher.id,
+                                    'full_name': new_teacher.full_name,
+                                    'type': teacher_type
+                                })
+
                 for day in py_res_teachers['data']['scheduleSecondWeek']:
                     for pair in day['pairs']:
                         teacher_type = await determine_teacher_type(pair['type'])
@@ -106,15 +115,20 @@ async def main():
 
                             new_teacher = await db_commands.get_teacher_by_schedule_id(faculty, lecturer_id)
 
+                            print(f"{new_teacher} + {pair['teacherName']}")
+                            print(f"itering {new_teacher.full_name}")
+                            repeat = False
                             for i in new_group['teachers']:
-                                if new_teacher.id == i['id']:
-                                    pass
-                                elif new_teacher.id != i['id']:
-                                    new_group['teachers'].append({
-                                        'id': new_teacher.id,
-                                        'full_name': new_teacher.full_name,
-                                        'type': teacher_type
-                                    })
+                                print(f"{new_teacher.full_name} = {i['full_name']} --- {new_teacher.id} = {i['id']}")
+                                if i['id'] == new_teacher.id:
+                                    repeat = True
+
+                            if repeat is False:
+                                new_group['teachers'].append({
+                                    'id': new_teacher.id,
+                                    'full_name': new_teacher.full_name,
+                                    'type': teacher_type
+                                })
 
 
 
