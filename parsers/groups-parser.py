@@ -75,10 +75,11 @@ async def main():
 
                             print(f"{new_teacher} + {pair['teacherName']} + {lecturer_id}, {teacher_type}")
                             print(f"itering {new_teacher.full_name}")
+
                             repeat = False
                             for i in new_group['teachers']:
                                 print(f"{new_teacher.full_name} = {i['full_name']} --- {new_teacher.id} = {i['id']}")
-                                if i['id'] == new_teacher.id:
+                                if i['id'] == new_teacher.id and teacher_type == i['type']:
                                     repeat = True
 
                             if repeat is False:
@@ -117,10 +118,11 @@ async def main():
 
                             print(f"{new_teacher} + {pair['teacherName']}")
                             print(f"itering {new_teacher.full_name}")
+
                             repeat = False
                             for i in new_group['teachers']:
                                 print(f"{new_teacher.full_name} = {i['full_name']} --- {new_teacher.id} = {i['id']}")
-                                if i['id'] == new_teacher.id:
+                                if i['id'] == new_teacher.id and teacher_type == i['type']:
                                     repeat = True
 
                             if repeat is False:
