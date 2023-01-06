@@ -9,12 +9,12 @@ from utils.db_api.database import create_db
 import traceback
 
 
-async def on_startup():
+async def on_startup(dp):
     print("Bot is running...")
     await create_db()
 
 
-async def on_shutdown():
+async def on_shutdown(dp):
     await drop_connection()
 
 

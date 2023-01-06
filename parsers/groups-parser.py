@@ -20,15 +20,12 @@ async def determine_teacher_type(type_text: str):
         return None
 
 
-
-
 async def main():
     await create_db()
 
     for faculty in faculties:
         faculty_index = faculties.index(faculty)
         faculty_ukr: str = faculties_ukr[faculty_index]
-        groups = []
 
         for group in py_res_groups['data']:
             print(group)
@@ -132,11 +129,7 @@ async def main():
                                     'type': teacher_type
                                 })
 
-
-
-
-
-                is_group_in_db = await db_commands.is_group_in_db(faculty, new_group['schedule_id'])
+                is_group_in_db = await db_commands.is_group_in_db_legacy(faculty, new_group['schedule_id'])
 
                 if is_group_in_db is False:
                     await db_commands.add_group(faculty, **new_group)
@@ -144,10 +137,6 @@ async def main():
                     current_group = await db_commands.get_group_by_name(new_group['name'])
                     current_group.teachers.append()
                     await db_commands.update_group(current_group.id, **new_group)
-
-
-
-
 
     await drop_connection()
 
