@@ -29,7 +29,7 @@ async def is_user_in_db(tg_id: int) -> bool:
 
 
 async def update_user(tg_id: int, **kwargs) -> None:
-    user: User = get_user_by_tg_id(tg_id)
+    user: User = await get_user_by_tg_id(tg_id)
     await user.update(**kwargs).apply()
 
 
@@ -72,10 +72,11 @@ async def get_all_votes(faculty: str) -> list[Vote]:
 
 
 async def get_votes_by_teacher_id(faculty: str, teacher_id: int) -> list[Vote]:
-    votes: list[Vote] = await Vote_classes[faculty].query.where(teacher_id=teacher_id).gino.all()
+    votes: list[Vote] = await Vote_classes[faculty].query.where(Vote_classes[faculty].teacher_id == teacher_id).gino.all()
     return votes
 
 
+# {"lecture": {"questions_ids": [1, 2, 3], "marks": [5, 5, 4]}, "pracrice": {"questions_ids": [4, 5, 3], "marks": [4, 5, 4]}}
 # example of variable results
 # results = {
 #   "lecture": {"questions_ids": [1, 2, 3], "marks": [5, 5, 4]},
@@ -94,7 +95,7 @@ async def get_all_groups(faculty: str) -> list[Group]:
 
 
 async def get_group_by_schedule_id(faculty: str, schedule_id: int) -> Group:
-    group: Group = await Group_classes[faculty].query.where(schedule_id=schedule_id).gino.first()
+    group: Group = await Group_classes[faculty].query.where(Group_classes[faculty].schedule_id == schedule_id).gino.first()
     return group
 
 
@@ -125,6 +126,20 @@ async def is_group_in_db_legacy(faculty: str, group_name: str) -> bool:
         return False
 
 
+async def get_group_id_by_name(faculty: str, group_name: str) -> Group:
+    print(faculty, group_name)
+    groups = await get_all_groups_names(faculty)
+    group_name = group_name.lower().strip()
+    group_index = None
+    for i in groups:
+        j = i.lower().strip()
+        if group_name in j:
+            print(f" X - {group_name} = {j}")
+            group = await Group_classes[faculty].query.where(Group_classes[faculty].name == i).gino.first()
+            print(group_name, group)
+            return group.id
+
+
 async def is_group_in_db(faculty: str, group_name: str) -> bool:
 
     if (faculty not in faculties) and (faculty in faculties_ukr):
@@ -148,7 +163,7 @@ async def is_group_in_db(faculty: str, group_name: str) -> bool:
 
 
 async def get_group_by_name(faculty: str, group_name: str) -> Group:
-    group = await Group_classes[faculty].query.where(name=group_name).gino.first()
+    group = await Group_classes[faculty].query.where(Group_classes[faculty].name == group_name).gino.first()
     return group
 
 
@@ -174,4 +189,6 @@ async def update_teacher(faculty, schedule_id, full_name, type):
     await teacher.update(full_name=full_name, schedule_id=schedule_id, type=type).apply()
     return teacher
 
-
+# manage db
+async def replace_teacher_name(faculty: str, teacher_id: int):
+    pass

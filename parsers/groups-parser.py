@@ -10,7 +10,7 @@ py_res_groups = json.loads(res_groups.text)
 
 
 async def determine_teacher_type(type_text: str):
-    if "Прак" in type_text:
+    if ("Прак" in type_text) or ("Лаб" in type_text):
         return "practice"
     elif "Лек" in type_text:
         return "lecture"
