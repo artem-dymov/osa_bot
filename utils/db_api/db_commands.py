@@ -51,7 +51,7 @@ async def get_teacher_by_schedule_id(faculty: str, schedule_id) -> Teacher:
     return teacher
 
 
-async def get_all_teachers(faculty: str) -> Teacher:
+async def get_all_teachers(faculty: str) -> list[Teacher]:
     teachers: Teacher = await Teacher_classes[faculty].query.gino.all()
     return teachers
 
@@ -99,7 +99,7 @@ async def get_group_by_schedule_id(faculty: str, schedule_id: int) -> Group:
     return group
 
 
-# accepts values both in Ukrainian and in English
+# 'faculty' accepts values both in Ukrainian and in English
 async def get_all_groups_names(faculty: str) -> list[str]:
     groups: list[Group] = await Group_classes[faculty].query.gino.all()
     names = []
@@ -156,23 +156,34 @@ async def is_group_in_db(faculty: str, group_name: str) -> bool:
 
     return False
 
-    # if group is not None:
-    #     return True
-    # else:
-    #     return False
-
 
 async def get_group_by_name(faculty: str, group_name: str) -> Group:
     group = await Group_classes[faculty].query.where(Group_classes[faculty].name == group_name).gino.first()
     return group
 
 
-async def is_teacher_in_db(faculty: str, schedule_id: str) -> bool:
+async def is_teacher_in_db_schedule(faculty: str, schedule_id: str) -> bool:
     teacher = await Teacher_classes[faculty].query.where(schedule_id == schedule_id).gino.first()
     if teacher is None:
         return True
     else:
         return False
+
+
+async def is_teacher_in_db(faculty: str, full_name: str) -> bool:
+    teachers = await get_all_teachers(faculty)
+    for teacher in teachers:
+        if full_name.lower().strip() == teacher.full_name.lower().strip():
+            return True
+
+    return False
+
+
+async def get_teacher_by_name(faculty: str, full_name: str):
+    teachers = await get_all_teachers(faculty)
+    for teacher in teachers:
+        if full_name.lower().strip() == teacher.full_name.lower().strip():
+            return teacher
 
 
 async def add_group(faculty: str, name: str, schedule_id: str, teachers: list[dict]) -> None:
@@ -189,6 +200,15 @@ async def update_teacher(faculty, schedule_id, full_name, type):
     await teacher.update(full_name=full_name, schedule_id=schedule_id, type=type).apply()
     return teacher
 
-# manage db
-async def replace_teacher_name(faculty: str, teacher_id: int):
-    pass
+
+async def search_teachers_by_name(faculty: str, full_name: str) -> Teacher:
+    result = []
+    for i in await get_all_teachers(faculty):
+        if full_name.lower() in i.full_name.lower():
+            result.append(i)
+
+    # if result is empty
+    if not result:
+        return None
+    else:
+        return result

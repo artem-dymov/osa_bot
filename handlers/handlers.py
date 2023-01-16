@@ -2,8 +2,9 @@ from aiogram import types
 from memory_profiler import memory_usage
 import keyboards
 from utils.db_api import db_commands
+from utils.db_api.models import Teacher
 
-from loader import dp
+from loader import dp, bot
 
 from keyboards import faculty_cd, faculty_markup, faculty_confirmation_markup
 
@@ -14,27 +15,99 @@ from aiogram.dispatcher import FSMContext
 
 from utils.db_api.models import User
 
+import hashlib
+from aiogram.types import InlineQuery, \
+    InputTextMessageContent, InlineQueryResultArticle
 
-@dp.message_handler(state=Registering.group)
-async def group_enter(message: types.Message, state: FSMContext):
-    group_name = message.text
 
-    faculty_ukr = await db_commands.get_user_faculty_by_tg_id(message.from_user.id)
+@dp.inline_handler()
+async def inline_echo(inline_query: InlineQuery):
+    text = inline_query.query or 'echo'
 
-    is_group_in_db = await db_commands.is_group_in_db(faculty_ukr, group_name)
+    faculty_ukr = await db_commands.get_user_faculty_by_tg_id(inline_query.from_user.id)
+    faculty = faculties[faculties_ukr.index(faculty_ukr)]
 
-    user: User = await db_commands.get_user_by_tg_id(message.from_user.id)
+    # if user in db, then faculty will be not None
+    if faculty is not None:
+        teachers: list[Teacher] = await db_commands.search_teachers_by_name(faculty, text)
 
-    if is_group_in_db is True:
-        await message.answer(f"confirm group {message.text}", reply_markup=await keyboards.group_confirmation_markup(
-            faculties_ukr.index(faculty_ukr), group_name
-        ))
-        # await message.edit_reply_markup(None)
-        group_id = await db_commands.get_group_id_by_name(faculties[faculties_ukr.index(faculty_ukr)], group_name.lower())
-        await db_commands.update_user(message.from_user.id, group_id=group_id)
-        await state.finish()
+        if teachers is not None:
+            items = []
+            for teacher in teachers:
+                input_content = InputTextMessageContent(f"/start_poll {teacher.full_name}")
+                result_id: str = hashlib.md5(teacher.full_name.encode()).hexdigest()
+                item = InlineQueryResultArticle(
+                    id=result_id,
+                    title=teacher.full_name,
+                    input_message_content=input_content,
+                )
+                items.append(item)
+
+            # Now this if is not using.
+            if not items:
+                input_content = InputTextMessageContent("Порожньо")
+                result_id: str = hashlib.md5(text.encode()).hexdigest()
+                item = InlineQueryResultArticle(
+                    id=result_id,
+                    title='Немає результатів',
+                    input_message_content=input_content,
+                )
+                items.append(item)
+            # don't forget to set cache_time=1 for testing (default is 300s or 5m)
+            await bot.answer_inline_query(inline_query.id, results=items[:10], cache_time=1)
+
+
+# @dp.message_handler(state=Registering.group)
+# async def group_enter(message: types.Message, state: FSMContext):
+#     group_name = message.text
+#
+#     faculty_ukr = await db_commands.get_user_faculty_by_tg_id(message.from_user.id)
+#
+#     is_group_in_db = await db_commands.is_group_in_db(faculty_ukr, group_name)
+#
+#     user: User = await db_commands.get_user_by_tg_id(message.from_user.id)
+#
+#     if is_group_in_db is True:
+#         await message.answer(f"confirm group {message.text}", reply_markup=await keyboards.group_confirmation_markup(
+#             faculties_ukr.index(faculty_ukr), group_name
+#         ))
+#         # await message.edit_reply_markup(None)
+#         group_id = await db_commands.get_group_id_by_name(faculties[faculties_ukr.index(faculty_ukr)], group_name.lower())
+#         await db_commands.update_user(message.from_user.id, group_id=group_id)
+#         await state.finish()
+#     else:
+#         await message.answer("No such group on this faculty. Try again.")
+
+
+@dp.message_handler(commands=['start_poll'])
+async def start_poll(message: types.Message, state: FSMContext):
+    user = await db_commands.get_user_by_tg_id(message.from_user.id)
+    if user is not None:
+        if len(message.text.split(' ')) > 1:
+            faculty = faculties[faculties_ukr.index(user.faculty)]
+
+            full_name = ''
+            for i in message.text.split(' '):
+                if '/' not in i:
+                    full_name = full_name + ' ' + i
+
+            teacher = await db_commands.get_teacher_by_name(faculty, full_name)
+            if teacher is not None:
+                print('Teacher in db')
+                await message.answer(f"Ви обрали викладача: {full_name}.\n\nЩо викладав у вас даний викладач?",
+                                     reply_markup=await keyboards.teacher_type_markup(faculty, teacher.id))
+
+
+            else:
+                print('Teacher not in db')
+                await message.answer('Викладача з таким ПІБ не знайдено.')
+
+            print(full_name)
+
+        else:
+            await message.answer('Неправильний формат!')
     else:
-        await message.answer("No such group on this faculty. Try again.")
+        await message.answer('Ви не зареєстровані.')
 
 
 @dp.message_handler(commands=['test'])
@@ -54,6 +127,9 @@ async def test_handler(message: types.Message, state: FSMContext):
 async def bot_start(message: types.Message, state: FSMContext):
     if await db_commands.is_user_in_db(message.from_user.id) is True:
         print("In db")
+        await message.answer('Нажміть на кнопку нижче, а потім почніть вводити ПІБ викладача і виберіть потрібного з ' +
+                             'наданого списку',
+                             reply_markup=await keyboards.start_inline_search_markup())
     else:
         print("Not in db")
         await message.answer("Оберіть ваш факультет.", reply_markup=await faculty_markup())
@@ -82,37 +158,32 @@ async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state
     elif confirmation_faculty == '1':
         bool_confirmation_faculty = True
 
-    confirmation_group = callback_data.get('confirmation_group')
-    bool_confirmation_group = None
-    if confirmation_faculty == '-1':
-        pass
-    elif confirmation_faculty == '0':
-        bool_confirmation_faculty = False
-    elif confirmation_faculty == '1':
-        bool_confirmation_faculty = True
 
-    if (bool_confirmation_faculty is None) and (bool_confirmation_group is None):
-        try:
-            if await db_commands.is_user_in_db(call.from_user.id) is True:
-                print("User in db.")
+    if bool_confirmation_faculty is None:
+        if await db_commands.is_user_in_db(call.from_user.id) is True:
+            print("User in db.")
+            try:
                 await call.message.edit_reply_markup(None)
-                await call.message.answer('Ви вже обрали факультет')
-            else:
-                # await save_faculty(faculty_index, call.from_user.id, call.from_user.username)
+            except Exception as e:
+                await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
+                print(e)
+            await call.message.answer('Ви вже обрали факультет')
+        else:
+            try:
                 await call.message.edit_text(f"Ви певні, що хочете обрати факультет {faculties_ukr[faculty_index]}?")
                 await call.message.edit_reply_markup(await faculty_confirmation_markup(faculty_index))
-
-        except Exception as e:
-            await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
-            print(e)
+            except Exception as e:
+                await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
+                print(e)
 
     elif bool_confirmation_faculty is True:
         try:
             if not (await db_commands.is_user_in_db(call.from_user.id) is True):
                 await save_faculty(faculty_index, call.from_user.id, call.from_user.username)
                 await call.message.edit_reply_markup(None)
-                await call.message.answer('Введіть назву групи')
-                await state.set_state(Registering.group)
+                await call.message.answer('Ваш факультет збережено!')
+
+
             else:
                 await call.message.edit_reply_markup(None)
                 await call.message.answer('Ви вже обрали факультет')
@@ -125,16 +196,5 @@ async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state
             await call.message.edit_reply_markup(await faculty_markup())
         except Exception as e:
             print(e)
-
-    elif bool_confirmation_group is True:
-        try:
-            await call.message.edit_reply_markup(None)
-            await call.answer(f"Юзер выбрал группу")
-        except Exception as e:
-            print(e)
-
-    elif bool_confirmation_group is False:
-        pass
-
 
     await call.answer()
