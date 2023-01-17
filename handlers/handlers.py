@@ -181,7 +181,7 @@ async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state
             if not (await db_commands.is_user_in_db(call.from_user.id) is True):
                 await save_faculty(faculty_index, call.from_user.id, call.from_user.username)
                 await call.message.edit_reply_markup(None)
-                await call.message.answer('Ваш факультет збережено!')
+                await call.message.answer('Ваш факультет збережено!\n\nНатисніть /start, щоб почати опитування.')
 
 
             else:
