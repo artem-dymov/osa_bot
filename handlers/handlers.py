@@ -1,12 +1,11 @@
 from aiogram import types
-from memory_profiler import memory_usage
 import keyboards
 from utils.db_api import db_commands
 from utils.db_api.models import Teacher
 
 from loader import dp, bot
 
-from keyboards import faculty_cd, faculty_markup, faculty_confirmation_markup
+from keyboards import faculty_cd, faculty_markup, faculty_confirmation_markup, teacher_cd
 
 from utils.db_api.models import faculties, faculties_ukr
 
@@ -55,28 +54,6 @@ async def inline_echo(inline_query: InlineQuery):
                 items.append(item)
             # don't forget to set cache_time=1 for testing (default is 300s or 5m)
             await bot.answer_inline_query(inline_query.id, results=items[:10], cache_time=1)
-
-
-# @dp.message_handler(state=Registering.group)
-# async def group_enter(message: types.Message, state: FSMContext):
-#     group_name = message.text
-#
-#     faculty_ukr = await db_commands.get_user_faculty_by_tg_id(message.from_user.id)
-#
-#     is_group_in_db = await db_commands.is_group_in_db(faculty_ukr, group_name)
-#
-#     user: User = await db_commands.get_user_by_tg_id(message.from_user.id)
-#
-#     if is_group_in_db is True:
-#         await message.answer(f"confirm group {message.text}", reply_markup=await keyboards.group_confirmation_markup(
-#             faculties_ukr.index(faculty_ukr), group_name
-#         ))
-#         # await message.edit_reply_markup(None)
-#         group_id = await db_commands.get_group_id_by_name(faculties[faculties_ukr.index(faculty_ukr)], group_name.lower())
-#         await db_commands.update_user(message.from_user.id, group_id=group_id)
-#         await state.finish()
-#     else:
-#         await message.answer("No such group on this faculty. Try again.")
 
 
 @dp.message_handler(commands=['start_poll'])
@@ -198,3 +175,8 @@ async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state
             print(e)
 
     await call.answer()
+
+
+@dp.callback_query_handler(teacher_cd.filter(), state='*')
+async def choosing_f(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    pass
