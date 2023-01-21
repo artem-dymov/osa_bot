@@ -38,11 +38,11 @@ teacher_cd: CallbackData = CallbackData('id', 'faculty_index', 'teacher_type', '
 async def teacher_type_markup(faculty_index: str, teacher_id):
     markup = InlineKeyboardMarkup()
     markup.row(
-        InlineKeyboardButton(text='Лектор', callback_data=teacher_cd.new(faculty_index, 0, teacher_id))
+        InlineKeyboardButton(text='Лекції', callback_data=teacher_cd.new(faculty_index, 0, teacher_id))
     )
 
     markup.row(
-        InlineKeyboardButton(text='Практик', callback_data=teacher_cd.new(faculty_index, 1, teacher_id,))
+        InlineKeyboardButton(text='Практики', callback_data=teacher_cd.new(faculty_index, 1, teacher_id,))
     )
 
     markup.row(
@@ -56,4 +56,45 @@ async def start_inline_search_markup():
     markup.row(
         InlineKeyboardButton(text='Обрати викладача', switch_inline_query_current_chat='')
     )
+    return markup
+
+
+questions_cd: CallbackData = CallbackData('id', 'question_id', 'answer')
+
+async def poll_1_5_markup(question_id):
+    markup = InlineKeyboardMarkup(row_width=5)
+    for i in range(1, 6):
+        markup.insert(InlineKeyboardButton(text=f"{i}", callback_data=questions_cd.new(question_id, i)))
+
+
+    return markup
+
+
+async def poll_yes_no_markup(question_id):
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton(text='Так', callback_data=questions_cd.new(question_id, 1)),
+        InlineKeyboardButton(text='Ні', callback_data=questions_cd.new(question_id, 0))
+    )
+
+    return markup
+
+# confirmation: 1 - True (Yes), 0 - False (No)
+# is_final_q: 1 - True, 0 - False
+open_q_confrimation_cd: CallbackData = CallbackData('id', 'question_id', 'confirmation', 'is_final_q')
+
+
+async def open_q_confirmation_markup(question_id: int, is_final_q: bool):
+
+    if is_final_q is True:
+        is_final_q = 1
+    else:
+        is_final_q = 0
+
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton(text='Так', callback_data=open_q_confrimation_cd.new(question_id, 1, is_final_q)),
+        InlineKeyboardButton(text='Ні', callback_data=open_q_confrimation_cd.new(question_id, 0, is_final_q))
+    )
+
     return markup

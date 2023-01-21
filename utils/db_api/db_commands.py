@@ -1,4 +1,4 @@
-from utils.db_api.models import User, Teacher, Teacher_classes, Vote, Vote_classes, Group, Group_classes
+from utils.db_api.models import User, Teacher, Teacher_classes, Vote, Vote_classes, Group, Group_classes, Question
 from utils.db_api.models import faculties, faculties_ukr
 from typing import Union
 from sqlalchemy import func
@@ -83,9 +83,9 @@ async def get_votes_by_teacher_id(faculty: str, teacher_id: int) -> list[Vote]:
 #   "pracrice": {"questions_ids": [4, 5, 3], "marks": [4, 5, 4]}
 # }
 # results must have at least 1 pair, maximum - 2 pairs
-async def add_vote(faculty: str, user_id: int, teacher_id: int, results: dict) -> Vote:
+async def add_vote(faculty: str, user_id: int, teacher_id: int, results: dict, open_answers: dict) -> Vote:
     vote: Vote = await Vote_classes[faculty](user_id=user_id, teacher_id=teacher_id,
-                                             results=results).create()
+                                             results=results, open_answers=open_answers).create()
     return vote
 
 
@@ -201,14 +201,26 @@ async def update_teacher(faculty, schedule_id, full_name, type):
     return teacher
 
 
-async def search_teachers_by_name(faculty: str, full_name: str) -> Teacher:
+async def search_teachers_by_name(faculty: str, full_name: str) -> list[str]:
     result = []
     for i in await get_all_teachers(faculty):
-        if full_name.lower() in i.full_name.lower():
-            result.append(i)
+        if full_name.lower() in i.full_name.lower() and i.full_name not in result:
+            result.append(i.full_name)
 
+    print(result)
     # if result is empty
     if not result:
         return None
     else:
         return result
+
+
+
+async def get_all_questions() -> list[Question]:
+    questions: Question = await Question.query.gino.all()
+    return questions
+
+
+async def get_question(id):
+    question: Question = await Question.get(id)
+    return question

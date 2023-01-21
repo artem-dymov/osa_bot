@@ -46,6 +46,12 @@ class Vote(db.Model):
     teacher_id = Column(INTEGER)
     results = Column(JSON)
 
+    # {question_id(int) : answer(str), question_id: answer}
+    # must be 2 pairs
+    # example
+    # {13: 'Hello', 14: 'world'}
+    open_answers = Column(JSON)
+
 
 Vote_classes: Vote = {}  # : dict[str, Vote]
 for i in faculties:
@@ -53,7 +59,8 @@ for i in faculties:
                                 "id": Column(INTEGER, Sequence("votes_id_seq", schema=i), primary_key=True),
                                 "user_id": Column(INTEGER),
                                 "teacher_id": Column(INTEGER),
-                                "results": Column(JSON)}))
+                                "results": Column(JSON),
+                                "open_answers": Column(JSON)}))
 
 
 class Group(db.Model):
@@ -73,3 +80,14 @@ for i in faculties:
                                 "name": Column(TEXT),
                                 "schedule_id": Column(TEXT),
                                 "teachers": Column(JSON)}))
+
+
+class Question(db.Model):
+    __table_args__ = dict(schema='public')
+    __tablename__ = 'questions'
+    query: sql.select
+
+    id = Column(INTEGER, Sequence("questions_id_seq"), primary_key=True)
+    question_text = Column(TEXT)
+    type = Column(TEXT)
+
