@@ -252,11 +252,16 @@ async def send_questions_cb(call: types.CallbackQuery, callback_data: dict, stat
 # questions with keyboards
 @dp.callback_query_handler(questions_cd.filter(), state=PollStates.open_micro_question)
 async def questions_btns_handler(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
-    question_id: str = callback_data.get('question_id')
-    question_answer: str = callback_data.get('answer')
+    question_id = int(callback_data.get('question_id'))
+    question_answer = int(callback_data.get('answer'))
+    markup_type: str = callback_data.get('markup_type')
 
-    await state.update_data({int(question_id): question_answer})
-    await call.message.edit_text(f'{call.message.text}\n\nВи обрали - {question_answer}')
+    await state.update_data({question_id: question_answer})
+
+    if markup_type == '1_5':
+        await call.message.edit_reply_markup(reply_markup=await keyboards.poll_1_5_markup(question_id, question_answer))
+    elif markup_type == 'yes/no':
+        await call.message.edit_reply_markup(reply_markup= await keyboards.poll_yes_no_markup(question_id, question_answer))
     await call.answer()
 
 
@@ -266,6 +271,7 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
     question_id: str = callback_data.get('question_id')
     question_confirmation = int(callback_data.get('confirmation'))
     is_last_question = int(callback_data.get('is_final_q'))
+    print('Hello')
 
     await call.message.edit_reply_markup(None)
 
@@ -273,8 +279,9 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
         anonymous_question = await db_commands.get_question(14)
         await call.message.edit_text('Відповідь прийнято.')
 
-        await state.set_state(PollStates.anonymous_question)
-        await call.message.answer(anonymous_question.question_text)
+        if is_last_question != 1:
+            await state.set_state(PollStates.anonymous_question)
+            await call.message.answer(anonymous_question.question_text)
     else:
         await call.message.edit_text('Введіть нову відповідь.')
 
@@ -325,4 +332,4 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
         await db_commands.add_vote(faculty, user.id, teacher_id, results, open_answers)
         await call.message.answer('Опитування закінчено, дані збережені.\nДякуємо за участь!')
         await state.finish()
-
+        await call.answer()

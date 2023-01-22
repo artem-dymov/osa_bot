@@ -58,24 +58,41 @@ async def start_inline_search_markup():
     )
     return markup
 
+# markup_type - possible values: '1_5' or 'yes/no'
+questions_cd: CallbackData = CallbackData('id', 'question_id', 'answer', 'markup_type')
 
-questions_cd: CallbackData = CallbackData('id', 'question_id', 'answer')
 
-async def poll_1_5_markup(question_id):
+# selected option - number from 1 to 5, describes near what number will be checkmark
+async def poll_1_5_markup(question_id, selected_option=None):
     markup = InlineKeyboardMarkup(row_width=5)
     for i in range(1, 6):
-        markup.insert(InlineKeyboardButton(text=f"{i}", callback_data=questions_cd.new(question_id, i)))
-
+        if selected_option == i:
+            markup.insert(InlineKeyboardButton(text=f"{i}✅", callback_data=questions_cd.new(question_id, i, '1_5')))
+        else:
+            markup.insert(InlineKeyboardButton(text=f"{i}", callback_data=questions_cd.new(question_id, i, '1_5')))
 
     return markup
 
 
-async def poll_yes_no_markup(question_id):
+async def poll_yes_no_markup(question_id, selected_option=None):
     markup = InlineKeyboardMarkup()
-    markup.add(
-        InlineKeyboardButton(text='Так', callback_data=questions_cd.new(question_id, 1)),
-        InlineKeyboardButton(text='Ні', callback_data=questions_cd.new(question_id, 0))
-    )
+    for i in range(0, 2).__reversed__():
+        text = ''
+        if i == 1:
+            text = 'Так'
+        elif i == 0:
+            text = 'Ні'
+
+        if i == selected_option:
+            markup.add(
+                InlineKeyboardButton(text=text+'✅', callback_data=questions_cd.new(question_id, i, 'yes/no'))
+            )
+        else:
+            markup.add(
+                InlineKeyboardButton(text=text, callback_data=questions_cd.new(question_id, i, 'yes/no'))
+            )
+
+
 
     return markup
 
