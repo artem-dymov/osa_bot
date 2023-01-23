@@ -102,13 +102,17 @@ async def start_poll(message: types.Message, state: FSMContext):
                     full_name = full_name + ' ' + i
 
             teacher = await db_commands.get_teacher_by_name(faculty, full_name)
-            if teacher is not None:
+
+            faculty = faculties[faculties_ukr.index(user.faculty)]
+            is_teacher_voted = await db_commands.is_teacher_voted(user.id, teacher.id, faculty)
+            if teacher is not None and is_teacher_voted is False:
                 await state.set_state(PollStates.minor_state)
                 await state.update_data(teacher_id=teacher.id)
                 print('Teacher in db')
                 await message.answer(f"Ви обрали викладача: {full_name}.\n\nЩо викладав у вас даний викладач?",
                                      reply_markup=await keyboards.teacher_type_markup(faculty, teacher.id))
-
+            elif teacher is not None:
+                await message.answer('Ви вже заповнювали цього викладача.')
             else:
                 print('Teacher not in db')
                 await message.answer('Викладача з таким ПІБ не знайдено.')

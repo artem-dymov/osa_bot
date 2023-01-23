@@ -215,7 +215,6 @@ async def search_teachers_by_name(faculty: str, full_name: str) -> list[str]:
         return result
 
 
-
 async def get_all_questions() -> list[Question]:
     questions: Question = await Question.query.gino.all()
     return questions
@@ -224,3 +223,13 @@ async def get_all_questions() -> list[Question]:
 async def get_question(id):
     question: Question = await Question.get(id)
     return question
+
+
+async def is_teacher_voted(user_id: int, teacher_id: int, faculty: str) -> bool:
+    votes = await get_all_votes(faculty)
+
+    for vote in votes:
+        if teacher_id == vote.teacher_id:
+            return True
+
+    return False
