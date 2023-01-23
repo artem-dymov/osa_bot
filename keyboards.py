@@ -98,7 +98,7 @@ async def poll_yes_no_markup(question_id, selected_option=None):
 
 # confirmation: 1 - True (Yes), 0 - False (No)
 # is_final_q: 1 - True, 0 - False
-open_q_confrimation_cd: CallbackData = CallbackData('id', 'question_id', 'confirmation', 'is_final_q')
+open_q_confrimation_cd: CallbackData = CallbackData('ikd', 'question_id', 'confirmation', 'is_final_q')
 
 
 async def open_q_confirmation_markup(question_id: int, is_final_q: bool):

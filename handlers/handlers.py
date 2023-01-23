@@ -21,6 +21,8 @@ import hashlib
 from aiogram.types import InlineQuery, \
     InputTextMessageContent, InlineQueryResultArticle
 
+import config
+
 
 @dp.inline_handler()
 async def inline_echo(inline_query: InlineQuery):
@@ -64,8 +66,11 @@ async def open_micro_handler(message: types.Message, state: FSMContext):
     state_data = await state.get_data()
 
     if None in state_data.values():
-
         await message.answer('Дайте відповідь на всі питання позаду')
+    elif message.text == '/skip':
+        await state.update_data({13: ' '})
+        await message.answer('Ви певні, що хочете пропустити питання?',
+                             reply_markup=await keyboards.open_q_confirmation_markup(13, False))
     else:
         await state.update_data({13: message.text})
         await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
@@ -74,8 +79,13 @@ async def open_micro_handler(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=PollStates.anonymous_question)
 async def anonymous_question_handler(message: types.Message, state: FSMContext):
-    await state.update_data({14: message.text})
-    await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
+    if message.text == '/skip':
+        await state.update_data({14: ' '})
+        await message.answer('Ви певні, що хочете пропустити питання?',
+                             reply_markup=await keyboards.open_q_confirmation_markup(14, True))
+    else:
+        await state.update_data({14: message.text})
+        await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
                          reply_markup=await keyboards.open_q_confirmation_markup(14, True))
 
 
@@ -226,7 +236,7 @@ async def send_poll_questions(teacher_type: str, message: types.Message, user_tg
 
     # first open question - open microphone question
     question_open_micro = await db_commands.get_question(13)
-    await message.answer(question_open_micro.question_text)
+    await message.answer(question_open_micro.question_text + f'\n\n{config.skip_message}')
 
 
 @dp.callback_query_handler(teacher_cd.filter(), state=PollStates.minor_state)
@@ -252,6 +262,7 @@ async def send_questions_cb(call: types.CallbackQuery, callback_data: dict, stat
 # questions with keyboards
 @dp.callback_query_handler(questions_cd.filter(), state=PollStates.open_micro_question)
 async def questions_btns_handler(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    print(callback_data)
     question_id = int(callback_data.get('question_id'))
     question_answer = int(callback_data.get('answer'))
     markup_type: str = callback_data.get('markup_type')
@@ -271,7 +282,6 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
     question_id: str = callback_data.get('question_id')
     question_confirmation = int(callback_data.get('confirmation'))
     is_last_question = int(callback_data.get('is_final_q'))
-    print('Hello')
 
     await call.message.edit_reply_markup(None)
 
@@ -281,7 +291,7 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
 
         if is_last_question != 1:
             await state.set_state(PollStates.anonymous_question)
-            await call.message.answer(anonymous_question.question_text)
+            await call.message.answer(anonymous_question.question_text + f'\n\n{config.skip_message}')
     else:
         await call.message.edit_text('Введіть нову відповідь.')
 
