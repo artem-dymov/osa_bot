@@ -109,7 +109,6 @@ async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state
 
     elif bool_confirmation_faculty is True:
         try:
-            ########
             if not (await db_commands.is_user_in_db(call.from_user.id) is True):
                 await state.update_data({
                     'faculty_index': faculty_index,
@@ -137,7 +136,6 @@ async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state
             await call.message.edit_reply_markup(await faculty_markup())
         except Exception as e:
             print(e)
-
     await call.answer()
 
 
@@ -214,7 +212,6 @@ async def start_poll(message: types.Message, state: FSMContext):
             else:
                 print('Teacher not in db')
                 await message.answer('Викладача з таким ПІБ не знайдено.')
-
 
         else:
             await message.answer('Неправильний формат!')
