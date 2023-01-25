@@ -32,6 +32,7 @@ async def faculty_confirmation_markup(faculty_index):
 # confirmation_group - '0' for False, '1' for True
 group_cd: CallbackData = CallbackData("id_group", "confirmation_group",)
 
+
 async def group_confirmation_markup():
     markup = InlineKeyboardMarkup()
     markup.row(

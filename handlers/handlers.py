@@ -391,3 +391,26 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
                                   ' щоб почати нове опитування')
         await state.finish()
         await call.answer()
+
+
+@dp.message_handler(commands=['list', 'ls'])
+async def list_cmd_handler(message: types.Message):
+    user = await db_commands.get_user_by_tg_id(message.from_user.id)
+
+    if user is not None:
+        group_teachers = []
+        ls = ''
+        groups = await db_commands.get_all_groups(faculties[faculties_ukr.index(user.faculty)])
+        for group in groups:
+            if group.id == user.group_id:
+                for teacher in group.teachers:
+                    if teacher['full_name'] not in group_teachers:
+                        if teacher['full_name'] not in group_teachers:
+                            group_teachers.append(teacher['full_name'])
+
+        for i in group_teachers:
+            ls = ls + '\n' + i
+        await message.answer(f'Викладачі, які можуть бути вам цікаві:\n\n{ls}')
+    else:
+        await message.answer('Ви не зареєстровані!')
+
