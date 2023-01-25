@@ -65,7 +65,7 @@ async def inline_echo(inline_query: InlineQuery):
 @dp.message_handler(commands=['start'])
 async def bot_start(message: types.Message, state: FSMContext):
     if await db_commands.is_user_in_db(message.from_user.id) is True:
-        await message.answer('Нажміть на кнопку нижче, а потім почніть вводити ПІБ викладача і виберіть потрібного з ' +
+        await message.answer('Натисніть на кнопку нижче, а потім почніть вводити ПІБ викладача і оберіть потрібного з ' +
                              'наданого списку',
                              reply_markup=await keyboards.start_inline_search_markup())
     else:
@@ -179,7 +179,9 @@ async def cofirm_group_handler(call: types.CallbackQuery, callback_data: dict, s
                                           username=username, group_id=group_id)
 
         await state.finish()
-        await call.message.answer('Дані збережені!\n\nНатисніть /start щоб обрати викладача')
+        await call.message.answer('Дані збережені!\n\nНатисніть /start щоб обрати викладача,'
+                                  'або натисніть /list щоб переглянути список викладачів, які можуть бути'
+                                  'Вам цікаві')
     else:
         await state.set_state(Registering.group)
         await call.message.answer('Відправ мені назву своєї групи')
