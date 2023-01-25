@@ -8,11 +8,11 @@ from utils.db_api.models import Teacher
 from loader import dp, bot
 
 from keyboards import faculty_cd, faculty_markup, faculty_confirmation_markup, teacher_cd, questions_cd, \
-    open_q_confrimation_cd
+    open_q_confrimation_cd, group_cd
 
 from utils.db_api.models import faculties, faculties_ukr
 
-from states import PollStates
+from states import PollStates, Registering
 from aiogram.dispatcher import FSMContext
 
 from utils.db_api.models import User
@@ -23,6 +23,7 @@ from aiogram.types import InlineQuery, \
 
 import config
 
+from typing import Union
 
 @dp.inline_handler()
 async def inline_echo(inline_query: InlineQuery):
@@ -61,32 +62,127 @@ async def inline_echo(inline_query: InlineQuery):
             await bot.answer_inline_query(inline_query.id, results=items[:10], cache_time=1)
 
 
-@dp.message_handler(state=PollStates.open_micro_question)
-async def open_micro_handler(message: types.Message, state: FSMContext):
-    state_data = await state.get_data()
-
-    if None in state_data.values():
-        await message.answer('Дайте відповідь на всі питання позаду')
-    elif message.text == '/skip':
-        await state.update_data({13: ' '})
-        await message.answer('Ви певні, що хочете пропустити питання?',
-                             reply_markup=await keyboards.open_q_confirmation_markup(13, False))
+@dp.message_handler(commands=['start'])
+async def bot_start(message: types.Message, state: FSMContext):
+    if await db_commands.is_user_in_db(message.from_user.id) is True:
+        await message.answer('Нажміть на кнопку нижче, а потім почніть вводити ПІБ викладача і виберіть потрібного з ' +
+                             'наданого списку',
+                             reply_markup=await keyboards.start_inline_search_markup())
     else:
-        await state.update_data({13: message.text})
-        await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
-                             reply_markup=await keyboards.open_q_confirmation_markup(13, False))
+        await message.answer("Оберіть ваш факультет.", reply_markup=await faculty_markup())
 
 
-@dp.message_handler(state=PollStates.anonymous_question)
-async def anonymous_question_handler(message: types.Message, state: FSMContext):
-    if message.text == '/skip':
-        await state.update_data({14: ' '})
-        await message.answer('Ви певні, що хочете пропустити питання?',
-                             reply_markup=await keyboards.open_q_confirmation_markup(14, True))
+async def save_user(faculty_index, tg_id, username, group_id):
+    faculty_ukr = faculties_ukr[faculty_index]
+    await db_commands.add_user(faculty_ukr=faculty_ukr, tg_id=tg_id, username=username, group_id=group_id)
+
+
+@dp.callback_query_handler(faculty_cd.filter())
+async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    faculty_index = int(callback_data.get('faculty_index'))
+
+    confirmation_faculty = callback_data.get('confirmation_faculty')
+    bool_confirmation_faculty = None
+    if confirmation_faculty == '-1':
+        pass
+    elif confirmation_faculty == '0':
+        bool_confirmation_faculty = False
+    elif confirmation_faculty == '1':
+        bool_confirmation_faculty = True
+
+    if bool_confirmation_faculty is None:
+        if await db_commands.is_user_in_db(call.from_user.id) is True:
+            print("User in db.")
+            try:
+                await call.message.edit_reply_markup(None)
+            except Exception as e:
+                await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
+                print(e)
+            await call.message.answer('Ви вже обрали факультет')
+        else:
+            try:
+                await call.message.edit_text(f"Ви певні, що хочете обрати факультет {faculties_ukr[faculty_index]}?")
+                await call.message.edit_reply_markup(await faculty_confirmation_markup(faculty_index))
+            except Exception as e:
+                await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
+                print(e)
+
+    elif bool_confirmation_faculty is True:
+        try:
+            ########
+            if not (await db_commands.is_user_in_db(call.from_user.id) is True):
+                await state.update_data({
+                    'faculty_index': faculty_index,
+                    'user_tg_id': call.from_user.id,
+                    'username': call.from_user.username
+                })
+
+                await state.set_state(Registering.group)
+
+                await call.message.edit_reply_markup(None)
+                await call.message.answer('Ваш факультет збережено!\n\nТепер напишіть мені назву своєї групи.\n'
+                                          'Назва повинна бути написана українською, приклади:\n'
+                                          'бс-11, бс-12мп, бр-03')
+
+
+            else:
+                await call.message.edit_reply_markup(None)
+                await call.message.answer('Ви вже обрали факультет')
+        except Exception as e:
+            print(e)
+
+    elif bool_confirmation_faculty is False:
+        try:
+            await call.message.edit_text("Оберіть ваш факультет.")
+            await call.message.edit_reply_markup(await faculty_markup())
+        except Exception as e:
+            print(e)
+
+    await call.answer()
+
+
+@dp.message_handler(state=Registering.group)
+async def group_reg_handler(message: types.Message, state: FSMContext):
+    state_data: dict = await state.get_data()
+    faculty_index: int = state_data['faculty_index']
+    user_tg_id: int = state_data['user_tg_id']
+    username: Union[None, str] = state_data['username']
+
+    groups = await db_commands.get_all_groups(faculties[faculty_index])
+
+    is_group_in_db = False
+    for group in groups:
+        if group.name.lower().strip() == message.text.lower().strip():
+            await state.update_data({'group_id': group.id})
+            await state.set_state(Registering.confirm_group)
+
+            markup = await keyboards.group_confirmation_markup()
+            is_group_in_db = True
+            await message.answer(f'Зберегти групу {group.name}?', reply_markup=markup)
+
+    if is_group_in_db is False:
+        await message.answer('Не знайдено групи з такою назвою, спробуйте ще раз!')
+
+
+@dp.callback_query_handler(group_cd.filter(), state=Registering.confirm_group)
+async def cofirm_group_handler(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    confirm_group: Union[0, 1] = int(callback_data.get('confirmation_group'))
+    state_data: dict = await state.get_data()
+    faculty_index: int = state_data['faculty_index']
+    user_tg_id: int = state_data['user_tg_id']
+    username: Union[None, str] = state_data['username']
+    group_id = state_data['group_id']
+
+    if confirm_group == 1:
+        faculty_ukr = faculties_ukr[faculty_index]
+        user = await db_commands.add_user(faculty_ukr=faculty_ukr, tg_id=user_tg_id,
+                                          username=username, group_id=group_id)
+
+        await state.finish()
+        await call.message.answer('Дані збережені!\n\nНатисніть /start щоб обрати викладача')
     else:
-        await state.update_data({14: message.text})
-        await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
-                         reply_markup=await keyboards.open_q_confirmation_markup(14, True))
+        await state.set_state(Registering.group)
+        await call.message.answer('Відправ мені назву своєї групи')
 
 
 @dp.message_handler(commands=['start_poll'])
@@ -122,88 +218,6 @@ async def start_poll(message: types.Message, state: FSMContext):
             await message.answer('Неправильний формат!')
     else:
         await message.answer('Ви не зареєстровані.')
-
-
-@dp.message_handler(commands=['test'])
-async def test_handler(message: types.Message, state: FSMContext):
-    await message.answer(message.from_user.id)
-    await message.answer(message.chat.id)
-
-
-@dp.message_handler(commands=['start'])
-async def bot_start(message: types.Message, state: FSMContext):
-    if await db_commands.is_user_in_db(message.from_user.id) is True:
-        print("In db")
-        await message.answer('Нажміть на кнопку нижче, а потім почніть вводити ПІБ викладача і виберіть потрібного з ' +
-                             'наданого списку',
-                             reply_markup=await keyboards.start_inline_search_markup())
-    else:
-        print("Not in db")
-        await message.answer("Оберіть ваш факультет.", reply_markup=await faculty_markup())
-
-
-async def save_faculty(faculty_index, tg_id, username):
-    print("User chosed faculty: " + f"{faculties[faculty_index]}")
-    faculty_ukr = faculties_ukr[faculty_index]
-    await db_commands.add_user(faculty_ukr=faculty_ukr, tg_id=tg_id, username=username)
-
-
-async def save_group(faculty_index, tg_id, group_name):
-    await db_commands.update_user(tg_id, group_name=group_name)
-
-
-@dp.callback_query_handler(faculty_cd.filter())
-async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
-    faculty_index = int(callback_data.get('faculty_index'))
-
-    confirmation_faculty = callback_data.get('confirmation_faculty')
-    bool_confirmation_faculty = None
-    if confirmation_faculty == '-1':
-        pass
-    elif confirmation_faculty == '0':
-        bool_confirmation_faculty = False
-    elif confirmation_faculty == '1':
-        bool_confirmation_faculty = True
-
-    if bool_confirmation_faculty is None:
-        if await db_commands.is_user_in_db(call.from_user.id) is True:
-            print("User in db.")
-            try:
-                await call.message.edit_reply_markup(None)
-            except Exception as e:
-                await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
-                print(e)
-            await call.message.answer('Ви вже обрали факультет')
-        else:
-            try:
-                await call.message.edit_text(f"Ви певні, що хочете обрати факультет {faculties_ukr[faculty_index]}?")
-                await call.message.edit_reply_markup(await faculty_confirmation_markup(faculty_index))
-            except Exception as e:
-                await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
-                print(e)
-
-    elif bool_confirmation_faculty is True:
-        try:
-            if not (await db_commands.is_user_in_db(call.from_user.id) is True):
-                await save_faculty(faculty_index, call.from_user.id, call.from_user.username)
-                await call.message.edit_reply_markup(None)
-                await call.message.answer('Ваш факультет збережено!\n\nНатисніть /start, щоб почати опитування.')
-
-
-            else:
-                await call.message.edit_reply_markup(None)
-                await call.message.answer('Ви вже обрали факультет')
-        except Exception as e:
-            print(e)
-
-    elif bool_confirmation_faculty is False:
-        try:
-            await call.message.edit_text("Оберіть ваш факультет.")
-            await call.message.edit_reply_markup(await faculty_markup())
-        except Exception as e:
-            print(e)
-
-    await call.answer()
 
 
 async def send_poll_questions(teacher_type: str, message: types.Message, user_tg_id: str, state: FSMContext):
@@ -280,6 +294,35 @@ async def questions_btns_handler(call: types.CallbackQuery, callback_data: dict,
     await call.answer()
 
 
+@dp.message_handler(state=PollStates.open_micro_question)
+async def open_micro_handler(message: types.Message, state: FSMContext):
+    state_data = await state.get_data()
+
+    if None in state_data.values():
+        await message.answer('Дайте відповідь на всі питання позаду')
+    elif message.text == '/skip':
+        await state.update_data({13: ' '})
+        await message.answer('Ви певні, що хочете пропустити питання?',
+                             reply_markup=await keyboards.open_q_confirmation_markup(13, False))
+    else:
+        await state.update_data({13: message.text})
+        await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
+                             reply_markup=await keyboards.open_q_confirmation_markup(13, False))
+
+
+@dp.message_handler(state=PollStates.anonymous_question)
+async def anonymous_question_handler(message: types.Message, state: FSMContext):
+    if message.text == '/skip':
+        await state.update_data({14: ' '})
+        await message.answer('Ви певні, що хочете пропустити питання?',
+                             reply_markup=await keyboards.open_q_confirmation_markup(14, True))
+    else:
+        await state.update_data({14: message.text})
+        await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
+                         reply_markup=await keyboards.open_q_confirmation_markup(14, True))
+
+
+
 @dp.callback_query_handler(open_q_confrimation_cd.filter(),
                            state=[PollStates.open_micro_question, PollStates.anonymous_question])
 async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
@@ -344,6 +387,7 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
                     results['practice']['marks'].append(results_cb[question.id])
 
         await db_commands.add_vote(faculty, user.id, teacher_id, results, open_answers)
-        await call.message.answer('Опитування закінчено, дані збережені.\nДякуємо за участь!')
+        await call.message.answer('Опитування закінчено, дані збережені.\nДякуємо за участь!\n\nНатисніть /start'
+                                  ' щоб почати нове опитування')
         await state.finish()
         await call.answer()

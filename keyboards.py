@@ -5,7 +5,7 @@ from utils.db_api.models import faculties, faculties_ukr
 from aiogram import types
 
 # confirmation callback values: -1 for empty, 0 for False, 1 for True
-faculty_cd: CallbackData = CallbackData("id", "faculty_index", "confirmation_faculty",)
+faculty_cd: CallbackData = CallbackData("id_faculty", "faculty_index", "confirmation_faculty",)
 
 
 async def faculty_markup():
@@ -27,7 +27,20 @@ async def faculty_confirmation_markup(faculty_index):
     markup.row(
         InlineKeyboardButton(text='Ні', callback_data=faculty_cd.new(faculty_index, 0))
     )
+    return markup
 
+# confirmation_group - '0' for False, '1' for True
+group_cd: CallbackData = CallbackData("id_group", "confirmation_group",)
+
+async def group_confirmation_markup():
+    markup = InlineKeyboardMarkup()
+    markup.row(
+        InlineKeyboardButton(text='Так', callback_data=group_cd.new('1'))
+    )
+
+    markup.row(
+        InlineKeyboardButton(text='Ні', callback_data=group_cd.new('0'))
+    )
     return markup
 
 
@@ -91,9 +104,6 @@ async def poll_yes_no_markup(question_id, selected_option=None):
             markup.add(
                 InlineKeyboardButton(text=text, callback_data=questions_cd.new(question_id, i, 'yes/no'))
             )
-
-
-
     return markup
 
 # confirmation: 1 - True (Yes), 0 - False (No)
