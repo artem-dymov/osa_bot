@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.callback_data import CallbackData
-from utils.db_api.models import faculties, faculties_ukr
+from config import faculties, faculties_ukr
 
 from aiogram import types
 

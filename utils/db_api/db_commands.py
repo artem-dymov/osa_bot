@@ -1,5 +1,5 @@
 from utils.db_api.models import User, Teacher, Teacher_classes, Vote, Vote_classes, Group, Group_classes, Question
-from utils.db_api.models import faculties, faculties_ukr
+from config import faculties, faculties_ukr
 from typing import Union
 from sqlalchemy import func
 
