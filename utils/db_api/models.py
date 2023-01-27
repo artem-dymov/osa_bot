@@ -1,9 +1,6 @@
+from config import faculties
 from utils.db_api.database import db
-from sqlalchemy import sql, Column, Sequence, INTEGER, TEXT, ARRAY, BIGINT, JSON
-
-
-faculties = ('fbme', 'ipp', 'fl', 'fel', 'its', 'ipt', 'imi')
-faculties_ukr = ('ФБМІ', 'ВПІ', 'ФЛ', 'ФЕЛ', 'ІТС', 'ФТІ', 'ММІ')
+from sqlalchemy import sql, Column, Sequence, INTEGER, TEXT, BIGINT, JSON
 
 
 class User(db.Model):

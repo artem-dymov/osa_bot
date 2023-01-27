@@ -1,5 +1,6 @@
 import json
-from utils.db_api.models import faculties_ukr, faculties, Teacher, Group, Group_classes, Teacher_classes
+from utils.db_api.models import Teacher, Group, Group_classes, Teacher_classes
+from config import faculties, faculties_ukr
 from utils.db_api import db_commands
 import asyncio
 from utils.db_api.database import create_db, drop_connection

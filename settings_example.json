@@ -1,0 +1,4 @@
+{
+  "BOT_TOKEN": "TOKEN",
+  "DATABASE_URL": "postgresql://username:password@host/database_name"
+}

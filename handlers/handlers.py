@@ -10,7 +10,7 @@ from loader import dp, bot
 from keyboards import faculty_cd, faculty_markup, faculty_confirmation_markup, teacher_cd, questions_cd, \
     open_q_confrimation_cd, group_cd
 
-from utils.db_api.models import faculties, faculties_ukr
+from config import faculties, faculties_ukr
 
 from states import PollStates, Registering
 from aiogram.dispatcher import FSMContext
@@ -24,6 +24,8 @@ from aiogram.types import InlineQuery, \
 import config
 
 from typing import Union
+
+from utils.photo_api import photo_getter
 
 @dp.inline_handler()
 async def inline_echo(inline_query: InlineQuery):
@@ -178,7 +180,7 @@ async def cofirm_group_handler(call: types.CallbackQuery, callback_data: dict, s
 
         await state.finish()
         await call.message.answer('Дані збережені!\n\nНатисніть /start щоб обрати викладача,'
-                                  'або натисніть /list щоб переглянути список викладачів, які можуть бути'
+                                  'або натисніть /list щоб переглянути список викладачів, які можуть бути '
                                   'Вам цікаві')
     else:
         await state.set_state(Registering.group)
@@ -204,7 +206,12 @@ async def start_poll(message: types.Message, state: FSMContext):
             if teacher is not None and is_teacher_voted is False:
                 await state.set_state(PollStates.minor_state)
                 await state.update_data(teacher_id=teacher.id)
-                print('Teacher in db')
+
+                file = await photo_getter.get_teacher_photo(user.faculty, teacher.id)
+                await message.answer_photo(file)
+                file.close()
+
+
                 await message.answer(f"Ви обрали викладача: {full_name}.\n\nЩо викладав у вас даний викладач?",
                                      reply_markup=await keyboards.teacher_type_markup(faculty, teacher.id))
             elif teacher is not None:
@@ -298,7 +305,7 @@ async def open_micro_handler(message: types.Message, state: FSMContext):
     state_data = await state.get_data()
 
     if None in state_data.values():
-        await message.answer('Дайте відповідь на всі питання позаду')
+        await message.answer('Дайте відповідь на усі попередні запитання')
     elif message.text == '/skip':
         await state.update_data({13: ' '})
         await message.answer('Ви певні, що хочете пропустити питання?',
