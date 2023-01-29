@@ -149,7 +149,6 @@ async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state
             await call.message.edit_reply_markup(await faculty_markup())
         except Exception as e:
             print(e)
-
     await call.answer()
 
 
@@ -231,7 +230,6 @@ async def start_poll(message: types.Message, state: FSMContext):
             else:
                 print('Teacher not in db')
                 await message.answer('Викладача з таким ПІБ не знайдено.')
-
 
         else:
             await message.answer('Неправильний формат!')
