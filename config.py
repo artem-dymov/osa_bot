@@ -12,4 +12,6 @@ with open('settings.json', 'r') as file:
 
 skip_message = 'Щоб пропустити це питання, натисніть /skip'
 
+cancel_vote_msg = 'Щоб відмінити голосування натисніть /cancel'
 
+start_suggestion_msg = 'Натисніть /start щоб почати опитування\n\nНатисніть /list щоб подивитись список викладачів'

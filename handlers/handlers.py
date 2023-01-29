@@ -27,6 +27,7 @@ from typing import Union
 
 from utils.photo_api import photo_getter
 
+
 @dp.inline_handler()
 async def inline_echo(inline_query: InlineQuery):
     text = inline_query.query or 'echo'
@@ -62,6 +63,16 @@ async def inline_echo(inline_query: InlineQuery):
                 items.append(item)
             # don't forget to set cache_time=1 for testing (default is 300s or 5m)
             await bot.answer_inline_query(inline_query.id, results=items[:10], cache_time=1)
+
+
+@dp.message_handler(commands=['cancel'], state='*')
+async def cancel_handler(message: types.Message, state: FSMContext):
+    if await state.get_state() is None:
+        await message.answer('Немає що відміняти. Ви не проходите опитування')
+    else:
+        await state.finish()
+        await message.answer('Дію відмінено')
+
 
 
 @dp.message_handler(commands=['start'])
@@ -111,7 +122,6 @@ async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state
 
     elif bool_confirmation_faculty is True:
         try:
-            ########
             if not (await db_commands.is_user_in_db(call.from_user.id) is True):
                 await state.update_data({
                     'faculty_index': faculty_index,
@@ -213,8 +223,8 @@ async def start_poll(message: types.Message, state: FSMContext):
                 await message.answer_photo(file)
                 file.close()
 
-
-                await message.answer(f"Ви обрали викладача: {full_name}.\n\nЩо викладав у вас даний викладач?",
+                await message.answer(f"Ви обрали викладача: {full_name}.\n\nЩо викладав у вас даний викладач?\n\n"
+                                     f"{config.cancel_vote_msg}",
                                      reply_markup=await keyboards.teacher_type_markup(faculty, teacher.id))
             elif teacher is not None:
                 await message.answer('Ви вже заповнювали цього викладача.')
@@ -243,13 +253,10 @@ async def send_poll_questions(teacher_type: str, message: types.Message, user_tg
     # question_id (10-12) - Так/Ні -> 1/0
     # question_id (13-14) - free strings
     await state.update_data(user_tg_id=user_tg_id, teacher_type=teacher_type)
-    print(message.from_user.id)
-    print(await state.get_data('user_tg_id'))
-    print(await state.get_data())
+
     questions = await db_commands.get_all_questions()
 
     for question in questions:
-        print(question.id)
         # check teacher_type
         if question.type == 'both' or teacher_type == "lecture+practice" or question.type == teacher_type:
             # questions with answers 1-5
@@ -329,7 +336,6 @@ async def anonymous_question_handler(message: types.Message, state: FSMContext):
         await state.update_data({14: message.text})
         await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
                          reply_markup=await keyboards.open_q_confirmation_markup(14, True))
-
 
 
 @dp.callback_query_handler(open_q_confrimation_cd.filter(),
@@ -422,4 +428,9 @@ async def list_cmd_handler(message: types.Message):
         await message.answer(f'Викладачі, які можуть бути вам цікаві:\n\n{ls}')
     else:
         await message.answer('Ви не зареєстровані!')
+
+
+@dp.message_handler(content_types=['text'])
+async def other_msg_handler(message: types.Message):
+    await message.answer(config.start_suggestion_msg)
 
