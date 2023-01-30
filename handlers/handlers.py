@@ -105,7 +105,6 @@ async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state
 
     if bool_confirmation_faculty is None:
         if await db_commands.is_user_in_db(call.from_user.id) is True:
-            print("User in db.")
             try:
                 await call.message.edit_reply_markup(None)
             except Exception as e:
@@ -228,7 +227,6 @@ async def start_poll(message: types.Message, state: FSMContext):
             elif teacher is not None:
                 await message.answer('Ви вже заповнювали цього викладача.')
             else:
-                print('Teacher not in db')
                 await message.answer('Викладача з таким ПІБ не знайдено.')
 
         else:
@@ -294,7 +292,6 @@ async def send_questions_cb(call: types.CallbackQuery, callback_data: dict, stat
 # questions with keyboards
 @dp.callback_query_handler(questions_cd.filter(), state=PollStates.open_micro_question)
 async def questions_btns_handler(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
-    print(callback_data)
     question_id = int(callback_data.get('question_id'))
     question_answer = int(callback_data.get('answer'))
     markup_type: str = callback_data.get('markup_type')
@@ -357,7 +354,6 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
 
     if is_last_question == 1 and question_confirmation != 0:
         state_data = await state.get_data()
-        print(state_data)
         user_tg_id = state_data['user_tg_id']
         teacher_id: int = state_data['teacher_id']
         teacher_type: str = state_data['teacher_type']

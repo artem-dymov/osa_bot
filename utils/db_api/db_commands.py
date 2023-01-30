@@ -127,26 +127,21 @@ async def is_group_in_db_legacy(faculty: str, group_name: str) -> bool:
 
 
 async def get_group_id_by_name(faculty: str, group_name: str) -> Group:
-    print(faculty, group_name)
     groups = await get_all_groups_names(faculty)
     group_name = group_name.lower().strip()
     group_index = None
     for i in groups:
         j = i.lower().strip()
         if group_name in j:
-            print(f" X - {group_name} = {j}")
             group = await Group_classes[faculty].query.where(Group_classes[faculty].name == i).gino.first()
-            print(group_name, group)
             return group.id
 
 
 async def is_group_in_db(faculty: str, group_name: str) -> bool:
 
     if (faculty not in faculties) and (faculty in faculties_ukr):
-        print("if")
         faculty = faculties[faculties_ukr.index(faculty)]
 
-    print(f"KEy {faculty}")
     groups = await get_all_groups_names(faculty)
     group_name = group_name.lower()
     for i in groups:
@@ -207,7 +202,6 @@ async def search_teachers_by_name(faculty: str, full_name: str) -> list[str]:
         if full_name.lower() in i.full_name.lower() and i.full_name not in result:
             result.append(i.full_name)
 
-    print(result)
     # if result is empty
     if not result:
         return None
