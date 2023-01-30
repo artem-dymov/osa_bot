@@ -222,6 +222,7 @@ async def start_poll(message: types.Message, state: FSMContext):
                 file.close()
 
                 await message.answer(f"Ви обрали викладача: {full_name}.\n\nЩо викладав у вас даний викладач?\n\n"
+                                     f"{config.teacher_non_type_msg}\n\n"
                                      f"{config.cancel_vote_msg}",
                                      reply_markup=await keyboards.teacher_type_markup(faculty, teacher.id))
             elif teacher is not None:
@@ -427,4 +428,9 @@ async def list_cmd_handler(message: types.Message):
 @dp.message_handler(content_types=['text'])
 async def other_msg_handler(message: types.Message):
     await message.answer(config.start_suggestion_msg)
+
+
+@dp.errors_handler()
+async def error_handler(update: types.Update, exception, state: FSMContext):
+    await state.finish()
 
