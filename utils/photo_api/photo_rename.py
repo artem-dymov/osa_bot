@@ -1,11 +1,9 @@
 import asyncio
 import os
 
-print(os.getcwd())
 os.chdir('../..')
-print(os.getcwd())
 
-from utils.db_api import db_commands
+import utils.db_api.db_commands
 from config import faculties, faculties_ukr
 from utils.db_api.database import create_db, drop_connection
 
