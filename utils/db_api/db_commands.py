@@ -223,7 +223,6 @@ async def is_teacher_voted(user_id: int, teacher_id: int, faculty: str) -> bool:
     votes = await get_all_votes(faculty)
 
     for vote in votes:
-        if teacher_id == vote.teacher_id:
+        if teacher_id == vote.teacher_id and vote.user_id == user_id:
             return True
-
     return False
