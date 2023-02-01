@@ -1,6 +1,8 @@
 import asyncio
 import os
+import sys
 
+print(sys.path)
 # os.chdir('../..')
 from ..db_api import db_commands
 from ...config import faculties, faculties_ukr
