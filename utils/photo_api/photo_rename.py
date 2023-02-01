@@ -2,16 +2,17 @@ import asyncio
 import os
 import sys
 
-print(sys.path)
-# os.chdir('../..')
-from ..db_api import db_commands
-from ...config import faculties, faculties_ukr
-from ..db_api.database import create_db, drop_connection
+os.chdir('../..')
+sys.path.append(os.getcwd())
+
+from utils.db_api import db_commands
+from config import faculties, faculties_ukr
+from utils.db_api.database import create_db, drop_connection
 
 
 async def main():
     await create_db()
-    os.chdir('../..')
+
     os.chdir('photos')
 
     for faculty_ukr in os.listdir():
