@@ -2,9 +2,9 @@ import asyncio
 import os
 
 # os.chdir('../..')
-from ...utils.db_api import db_commands
+from ..db_api import db_commands
 from ...config import faculties, faculties_ukr
-from ...utils.db_api.database import create_db, drop_connection
+from ..db_api.database import create_db, drop_connection
 
 
 async def main():
