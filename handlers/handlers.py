@@ -68,7 +68,7 @@ async def inline_echo(inline_query: InlineQuery):
             await bot.answer_inline_query(inline_query.id, results=items[:10], cache_time=1)
 
 
-async def is_throttled(message: types.Message, command_key: str):
+async def is_throttled(message: types.Message):
     try:
         await dp.throttle('key', rate=config.ANTIFLOOD_RATE)
     except Throttled:
@@ -81,7 +81,7 @@ async def is_throttled(message: types.Message, command_key: str):
 
 @dp.message_handler(commands=['cancel'], state='*')
 async def cancel_handler(message: types.Message, state: FSMContext):
-    if await is_throttled(message, 'start') is True:
+    if await is_throttled(message) is True:
         return -1
 
     if await state.get_state() is None:
@@ -93,7 +93,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=['start'])
 async def bot_start(message: types.Message, state: FSMContext):
-    if await is_throttled(message, 'start') is True:
+    if await is_throttled(message) is True:
         return -1
 
 
@@ -219,7 +219,7 @@ async def cofirm_group_handler(call: types.CallbackQuery, callback_data: dict, s
 
 @dp.message_handler(commands=['start_poll'])
 async def start_poll(message: types.Message, state: FSMContext):
-    if await is_throttled(message, 'start') is True:
+    if await is_throttled(message) is True:
         return -1
 
     user = await db_commands.get_user_by_tg_id(message.from_user.id)
