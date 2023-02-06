@@ -27,6 +27,9 @@ from typing import Union
 
 from utils.photo_api import photo_getter
 
+from aiogram.utils.exceptions import Throttled
+
+
 
 @dp.inline_handler()
 async def inline_echo(inline_query: InlineQuery):
@@ -65,8 +68,22 @@ async def inline_echo(inline_query: InlineQuery):
             await bot.answer_inline_query(inline_query.id, results=items[:10], cache_time=1)
 
 
+async def is_throttled(message: types.Message, command_key: str):
+    try:
+        await dp.throttle('key', rate=config.ANTIFLOOD_RATE)
+    except Throttled:
+        # If request is throttled, the `Throttled` exception will be raised
+        await message.reply('Занадто багато запитів!')
+        return True
+    else:
+        return False
+
+
 @dp.message_handler(commands=['cancel'], state='*')
 async def cancel_handler(message: types.Message, state: FSMContext):
+    if await is_throttled(message, 'start') is True:
+        return -1
+
     if await state.get_state() is None:
         await message.answer('Немає що відміняти. Ви не проходите опитування')
     else:
@@ -74,9 +91,12 @@ async def cancel_handler(message: types.Message, state: FSMContext):
         await message.answer('Дію відмінено')
 
 
-
 @dp.message_handler(commands=['start'])
 async def bot_start(message: types.Message, state: FSMContext):
+    if await is_throttled(message, 'start') is True:
+        return -1
+
+
     if await db_commands.is_user_in_db(message.from_user.id) is True:
         await message.answer('Натисніть на кнопку нижче, а потім почніть вводити ПІБ викладача і оберіть потрібного з ' +
                              'наданого списку',
@@ -199,6 +219,9 @@ async def cofirm_group_handler(call: types.CallbackQuery, callback_data: dict, s
 
 @dp.message_handler(commands=['start_poll'])
 async def start_poll(message: types.Message, state: FSMContext):
+    if await is_throttled(message, 'start') is True:
+        return -1
+
     user = await db_commands.get_user_by_tg_id(message.from_user.id)
     if user is not None:
         if len(message.text.split(' ')) > 1:
@@ -427,10 +450,11 @@ async def list_cmd_handler(message: types.Message):
 
 @dp.message_handler(content_types=['text'])
 async def other_msg_handler(message: types.Message):
+    if await is_throttled(message) is True:
+        return -1
+
     await message.answer(config.start_suggestion_msg)
 
 
-@dp.errors_handler()
-async def error_handler(update: types.Update, exception, state: FSMContext):
-    await state.finish()
+
 

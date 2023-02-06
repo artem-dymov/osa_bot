@@ -9,7 +9,6 @@ db = Gino()
 async def create_db():
     db.gino: GinoSchemaVisitor
     await db.set_bind(POSTGRESQL_URL)
-    # await db.set_bind("postgresql://postgres:copium1158@194.15.113.81:5432/sova")
     await db.gino.create_all()
 
 

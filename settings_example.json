@@ -1,4 +1,5 @@
 {
   "BOT_TOKEN": "TOKEN",
-  "DATABASE_URL": "postgresql://username:password@host/database_name"
+  "DATABASE_URL": "postgresql://username:password@host/database_name",
+  "ANTIFLOOD_RATE": 2
 }
