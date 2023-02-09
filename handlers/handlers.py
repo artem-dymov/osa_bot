@@ -394,7 +394,7 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
 
         results = {
             'lecture': {
-                'questions_ids' : [],
+                'questions_ids': [],
                 'marks': []
             },
             'practice': {
@@ -418,6 +418,11 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
 
                     results['practice']['questions_ids'].append(question.id)
                     results['practice']['marks'].append(results_cb[question.id])
+
+        if teacher_type == 'lecture':
+            del results['practice']
+        elif teacher_type == 'practice':
+            del results['lecture']
 
         await db_commands.add_vote(faculty, user.id, teacher_id, results, open_answers)
         await call.message.answer('Опитування закінчено, дані збережені.\nДякуємо за участь!\n\nНатисніть /start'
