@@ -1,2 +1,3 @@
 settings.json
 /photos/
+/utils/parsers/db_parser.py
