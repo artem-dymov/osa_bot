@@ -19,6 +19,11 @@ async def add_user(tg_id: int, faculty_ukr: str, group_id=None, username=None) -
     return new_user
 
 
+async def get_all_users() -> list[User]:
+    users: User = await User.query.gino.all()
+    return users
+
+
 async def is_user_in_db(tg_id: int) -> bool:
     user: User = await get_user_by_tg_id(tg_id)
 
@@ -87,6 +92,11 @@ async def add_vote(faculty: str, user_id: int, teacher_id: int, results: dict, o
     vote: Vote = await Vote_classes[faculty](user_id=user_id, teacher_id=teacher_id,
                                              results=results, open_answers=open_answers).create()
     return vote
+
+
+async def get_group(id: int, faculty: str) -> Group:
+    group: Group = await Group_classes[faculty].get(id)
+    return group
 
 
 async def get_all_groups(faculty: str) -> list[Group]:
