@@ -47,7 +47,7 @@ class Vote(db.Model):
     # must be 2 pairs
     # example
     # {13: 'Hello', 14: 'world'}
-    open_answers = Column(JSON)
+    open_answers: dict = Column(JSON)
 
 
 Vote_classes: Vote = {}  # : dict[str, Vote]

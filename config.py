@@ -4,11 +4,28 @@ faculties = ('fbme', 'ipp', 'fl', 'fel', 'its', 'ipt', 'imi')
 faculties_ukr = ('ФБМІ', 'ВПІ', 'ФЛ', 'ФЕЛ', 'ІТС', 'ФТІ', 'ММІ')
 
 
-with open('settings.json', 'r') as file:
-    py_data = json.load(file)
-    BOT_TOKEN = py_data['BOT_TOKEN']
-    POSTGRESQL_URL = py_data['POSTGRESQL_URL']
-    ANTIFLOOD_RATE = py_data['ANTIFLOOD_RATE']
+def _get_data():
+    with open('settings.json', 'r') as file:
+        global BOT_TOKEN
+        global POSTGRESQL_URL
+        global ANTIFLOOD_RATE
+
+        py_data = json.load(file)
+
+        BOT_TOKEN = py_data['BOT_TOKEN']
+        POSTGRESQL_URL = py_data['POSTGRESQL_URL']
+        ANTIFLOOD_RATE = py_data['ANTIFLOOD_RATE']
+
+
+try:
+    _get_data()
+except FileNotFoundError:
+    import os
+    os.chdir('../..')
+    _get_data()
+except Exception as e:
+    print(e)
+
 
 skip_message = 'Щоб пропустити це питання, натисніть /skip'
 
