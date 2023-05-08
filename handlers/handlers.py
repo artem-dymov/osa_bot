@@ -30,7 +30,6 @@ from utils.photo_api import photo_getter
 from aiogram.utils.exceptions import Throttled
 
 
-
 @dp.inline_handler()
 async def inline_echo(inline_query: InlineQuery):
     text = inline_query.query or 'echo'
@@ -96,13 +95,42 @@ async def bot_start(message: types.Message, state: FSMContext):
     if await is_throttled(message) is True:
         return -1
 
-
     if await db_commands.is_user_in_db(message.from_user.id) is True:
         await message.answer('Натисніть на кнопку нижче, а потім почніть вводити ПІБ викладача і оберіть потрібного з ' +
                              'наданого списку',
                              reply_markup=await keyboards.start_inline_search_markup())
     else:
-        await message.answer("Оберіть ваш факультет.", reply_markup=await faculty_markup())
+        faculty_text = ''
+        for i in faculties_ukr:
+            faculty_text += '\n' + i
+        await message.answer(f"Оберіть та введіть ваш факультет зі списку нижче:{faculty_text}")
+        await state.set_state(Registering.faculty)
+
+
+@dp.message_handler(state=Registering.faculty)
+async def reg_faculty_handler(message: types.Message, state: FSMContext):
+    user_input = message.text.strip().lower()
+    for faculty_ukr in faculties_ukr:
+        if user_input == faculty_ukr.strip().lower():
+            faculty_index = faculties_ukr.index(faculty_ukr)
+            try:
+                if not (await db_commands.is_user_in_db(message.from_user.id) is True):
+                    await state.update_data({
+                        'faculty_index': faculty_index,
+                        'user_tg_id': message.from_user.id,
+                        'username': message.from_user.username
+                    })
+
+                    await state.set_state(Registering.group)
+
+                    await message.answer('Ваш факультет збережено!\n\nТепер напишіть мені назву своєї групи.\n'
+                                              'Назва повинна бути написана українською, приклади:\n'
+                                              'бс-11, бс-12мп, бр-03')
+
+                else:
+                    await message.answer('Ви вже обрали факультет')
+            except Exception as e:
+                print(e)
 
 
 async def save_user(faculty_index, tg_id, username, group_id):
@@ -110,65 +138,65 @@ async def save_user(faculty_index, tg_id, username, group_id):
     await db_commands.add_user(faculty_ukr=faculty_ukr, tg_id=tg_id, username=username, group_id=group_id)
 
 
-@dp.callback_query_handler(faculty_cd.filter())
-async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
-    faculty_index = int(callback_data.get('faculty_index'))
-
-    confirmation_faculty = callback_data.get('confirmation_faculty')
-    bool_confirmation_faculty = None
-    if confirmation_faculty == '-1':
-        pass
-    elif confirmation_faculty == '0':
-        bool_confirmation_faculty = False
-    elif confirmation_faculty == '1':
-        bool_confirmation_faculty = True
-
-    if bool_confirmation_faculty is None:
-        if await db_commands.is_user_in_db(call.from_user.id) is True:
-            try:
-                await call.message.edit_reply_markup(None)
-            except Exception as e:
-                await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
-                print(e)
-            await call.message.answer('Ви вже обрали факультет')
-        else:
-            try:
-                await call.message.edit_text(f"Ви певні, що хочете обрати факультет {faculties_ukr[faculty_index]}?")
-                await call.message.edit_reply_markup(await faculty_confirmation_markup(faculty_index))
-            except Exception as e:
-                await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
-                print(e)
-
-    elif bool_confirmation_faculty is True:
-        try:
-            if not (await db_commands.is_user_in_db(call.from_user.id) is True):
-                await state.update_data({
-                    'faculty_index': faculty_index,
-                    'user_tg_id': call.from_user.id,
-                    'username': call.from_user.username
-                })
-
-                await state.set_state(Registering.group)
-
-                await call.message.edit_reply_markup(None)
-                await call.message.answer('Ваш факультет збережено!\n\nТепер напишіть мені назву своєї групи.\n'
-                                          'Назва повинна бути написана українською, приклади:\n'
-                                          'бс-11, бс-12мп, бр-03')
-
-
-            else:
-                await call.message.edit_reply_markup(None)
-                await call.message.answer('Ви вже обрали факультет')
-        except Exception as e:
-            print(e)
-
-    elif bool_confirmation_faculty is False:
-        try:
-            await call.message.edit_text("Оберіть ваш факультет.")
-            await call.message.edit_reply_markup(await faculty_markup())
-        except Exception as e:
-            print(e)
-    await call.answer()
+# @dp.callback_query_handler(faculty_cd.filter())
+# async def choosing_faculty(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+#     faculty_index = int(callback_data.get('faculty_index'))
+#
+#     confirmation_faculty = callback_data.get('confirmation_faculty')
+#     bool_confirmation_faculty = None
+#     if confirmation_faculty == '-1':
+#         pass
+#     elif confirmation_faculty == '0':
+#         bool_confirmation_faculty = False
+#     elif confirmation_faculty == '1':
+#         bool_confirmation_faculty = True
+#
+#     if bool_confirmation_faculty is None:
+#         if await db_commands.is_user_in_db(call.from_user.id) is True:
+#             try:
+#                 await call.message.edit_reply_markup(None)
+#             except Exception as e:
+#                 await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
+#                 print(e)
+#             await call.message.answer('Ви вже обрали факультет')
+#         else:
+#             try:
+#                 await call.message.edit_text(f"Ви певні, що хочете обрати факультет {faculties_ukr[faculty_index]}?")
+#                 await call.message.edit_reply_markup(await faculty_confirmation_markup(faculty_index))
+#             except Exception as e:
+#                 await call.message.answer('Помилка! Почніть з команди /start\nConfirimation None.')
+#                 print(e)
+#
+#     elif bool_confirmation_faculty is True:
+#         try:
+#             if not (await db_commands.is_user_in_db(call.from_user.id) is True):
+#                 await state.update_data({
+#                     'faculty_index': faculty_index,
+#                     'user_tg_id': call.from_user.id,
+#                     'username': call.from_user.username
+#                 })
+#
+#                 await state.set_state(Registering.group)
+#
+#                 await call.message.edit_reply_markup(None)
+#                 await call.message.answer('Ваш факультет збережено!\n\nТепер напишіть мені назву своєї групи.\n'
+#                                           'Назва повинна бути написана українською, приклади:\n'
+#                                           'бс-11, бс-12мп, бр-03')
+#
+#
+#             else:
+#                 await call.message.edit_reply_markup(None)
+#                 await call.message.answer('Ви вже обрали факультет')
+#         except Exception as e:
+#             print(e)
+#
+#     elif bool_confirmation_faculty is False:
+#         try:
+#             await call.message.edit_text("Оберіть ваш факультет.")
+#             await call.message.edit_reply_markup(await faculty_markup())
+#         except Exception as e:
+#             print(e)
+#     await call.answer()
 
 
 @dp.message_handler(state=Registering.group)
