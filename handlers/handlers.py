@@ -126,11 +126,16 @@ async def reg_faculty_handler(message: types.Message, state: FSMContext):
                     await message.answer('Ваш факультет збережено!\n\nТепер напишіть мені назву своєї групи.\n'
                                               'Назва повинна бути написана українською, приклади:\n'
                                               'бс-11, бс-12мп, бр-03')
+                    return 0
 
                 else:
                     await message.answer('Ви вже обрали факультет')
             except Exception as e:
                 print(e)
+
+    await message.answer('Даного факультету немає у списку, будь ласка, оберіть факультет'
+                         ' зі списку вище.')
+    return 0
 
 
 async def save_user(faculty_index, tg_id, username, group_id):
