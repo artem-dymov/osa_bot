@@ -2,8 +2,8 @@ import asyncio
 
 from aiogram import types
 import keyboards
-from utils.db_api import db_commands
-from utils.db_api.models import Teacher
+from ...osa_utils.db_api import db_commands
+from ...osa_utils.db_api.models import Teacher
 
 from loader import dp, bot
 

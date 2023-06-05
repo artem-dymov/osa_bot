@@ -1,14 +1,10 @@
 import asyncio
 
-#from .osa-utils.db_api.database import create_db, drop_connection
-from utils.db_api.database import create_db, drop_connection
-from utils.db_api import db_commands
+from ..osa_utils.db_api.database import create_db, drop_connection
 
-from aiogram.types import BotCommand
 from loader import bot
 
 import traceback
-
 import sys
 
 
