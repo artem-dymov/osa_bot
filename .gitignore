@@ -3,3 +3,6 @@ settings.json
 /utils/parsers/stats_parser.py
 /stats/
 /open_answers_results/
+/db_backups/
+/venv/
+.idea/

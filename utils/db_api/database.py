@@ -1,14 +1,14 @@
 from gino import Gino
 from gino.schema import GinoSchemaVisitor
 
-from config import POSTGRESQL_URL
+from config import DATABASE_URL
 
 db = Gino()
 
 
 async def create_db():
     db.gino: GinoSchemaVisitor
-    await db.set_bind(POSTGRESQL_URL)
+    await db.set_bind(DATABASE_URL)
     await db.gino.create_all()
 
 

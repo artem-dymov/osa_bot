@@ -3,18 +3,23 @@ import json
 faculties = ('fbme', 'ipp', 'fl', 'fel', 'its', 'ipt', 'imi')
 faculties_ukr = ('ФБМІ', 'ВПІ', 'ФЛ', 'ФЕЛ', 'ІТС', 'ФТІ', 'ММІ')
 
+global BOT_TOKEN
+global DATABASE_URL
+global ANTIFLOOD_RATE
 
 def _get_data():
     with open('settings.json', 'r') as file:
         global BOT_TOKEN
-        global POSTGRESQL_URL
+        global DATABASE_URL
         global ANTIFLOOD_RATE
 
         py_data = json.load(file)
 
         BOT_TOKEN = py_data['BOT_TOKEN']
-        POSTGRESQL_URL = py_data['POSTGRESQL_URL']
+        DATABASE_URL = py_data['DATABASE_URL']
         ANTIFLOOD_RATE = py_data['ANTIFLOOD_RATE']
+
+        print(DATABASE_URL)
 
 
 try:

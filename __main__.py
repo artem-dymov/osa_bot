@@ -1,12 +1,15 @@
 import asyncio
+
+#from .osa-utils.db_api.database import create_db, drop_connection
 from utils.db_api.database import create_db, drop_connection
 from utils.db_api import db_commands
 
 from aiogram.types import BotCommand
 from loader import bot
 
-from utils.db_api.database import create_db
 import traceback
+
+import sys
 
 
 async def on_startup(dp):
@@ -19,6 +22,10 @@ async def on_shutdown(dp):
 
 
 if __name__ == '__main__':
+    if sys.argv:
+        print("if")
+    else:
+        print('else')
     from aiogram import executor
     from handlers.handlers import dp
 
