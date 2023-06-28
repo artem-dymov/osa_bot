@@ -1,6 +1,6 @@
 import asyncio
 
-from ..osa_utils.db_api.database import create_db, drop_connection
+from osa_utils.db_api.database import create_db, drop_connection
 
 from loader import bot
 

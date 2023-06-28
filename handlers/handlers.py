@@ -2,8 +2,8 @@ import asyncio
 
 from aiogram import types
 import keyboards
-from ...osa_utils.db_api import db_commands
-from ...osa_utils.db_api.models import Teacher
+from osa_utils.db_api import db_commands
+from osa_utils.db_api.models import Teacher
 
 from loader import dp, bot
 
@@ -15,7 +15,7 @@ from config import faculties, faculties_ukr
 from states import PollStates, Registering
 from aiogram.dispatcher import FSMContext
 
-from utils.db_api.models import User
+from osa_utils.db_api.models import User
 
 import hashlib
 from aiogram.types import InlineQuery, \
@@ -25,7 +25,7 @@ import config
 
 from typing import Union
 
-from utils.photo_api import photo_getter
+from osa_utils.photo_api import photo_getter
 
 from aiogram.utils.exceptions import Throttled
 

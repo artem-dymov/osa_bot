@@ -6,3 +6,4 @@ settings.json
 /db_backups/
 /venv/
 .idea
+/osa_utils/
