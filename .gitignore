@@ -7,3 +7,5 @@ settings.json
 /venv/
 .idea
 /osa_utils/
+__pycache__/
+handlers/__pycache__/

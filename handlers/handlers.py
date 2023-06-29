@@ -240,7 +240,9 @@ async def start_poll(message: types.Message, state: FSMContext):
                 await state.set_state(PollStates.minor_state)
                 await state.update_data(teacher_id=teacher.id)
 
+                # contains object opened with open()
                 file = await photo_getter.get_teacher_photo(user.faculty, teacher.id)
+
                 await message.answer_photo(file)
                 file.close()
 
