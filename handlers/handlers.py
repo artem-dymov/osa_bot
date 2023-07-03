@@ -8,7 +8,7 @@ from osa_utils.db_api.models import Teacher
 from loader import dp, bot
 
 from keyboards import faculty_cd, faculty_markup, faculty_confirmation_markup, teacher_cd, questions_cd, \
-    open_q_confrimation_cd, group_cd
+    open_q_confirmation_cd, group_cd
 
 from config import faculties, faculties_ukr
 
@@ -30,7 +30,6 @@ from osa_utils.photo_api import photo_getter
 from aiogram.utils.exceptions import Throttled
 
 
-
 @dp.inline_handler()
 async def inline_echo(inline_query: InlineQuery):
     text = inline_query.query or 'echo'
@@ -40,11 +39,13 @@ async def inline_echo(inline_query: InlineQuery):
 
     # if user in db, then faculty will be not None
     if faculty is not None:
-        teachers_names: list[Teacher] = await db_commands.search_teachers_by_name(faculty, text)
+        teachers: list[Teacher] = await db_commands.search_teachers_by_name(faculty, text)
 
-        if teachers_names is not None:
+        if teachers is not None:
+
             items = []
-            for teacher_name in teachers_names:
+            for teacher in teachers:
+                teacher_name = teacher.full_name
                 input_content = InputTextMessageContent(f"/start_poll {teacher_name}")
                 result_id: str = hashlib.md5(teacher_name.encode()).hexdigest()
                 item = InlineQueryResultArticle(
@@ -95,7 +96,6 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 async def bot_start(message: types.Message, state: FSMContext):
     if await is_throttled(message) is True:
         return -1
-
 
     if await db_commands.is_user_in_db(message.from_user.id) is True:
         await message.answer('Натисніть на кнопку нижче, а потім почніть вводити ПІБ викладача і оберіть потрібного з ' +
@@ -237,6 +237,11 @@ async def start_poll(message: types.Message, state: FSMContext):
             faculty = faculties[faculties_ukr.index(user.faculty)]
             is_teacher_voted = await db_commands.is_teacher_voted(user.id, teacher.id, faculty)
             if teacher is not None and is_teacher_voted is False:
+
+                # TODO group checking
+                # student can vote for certain teacher if he has it in his group
+                # user_group = await db_commands.ge
+
                 await state.set_state(PollStates.minor_state)
                 await state.update_data(teacher_id=teacher.id)
 
@@ -269,29 +274,32 @@ async def send_poll_questions(teacher_type: str, message: types.Message, user_tg
     # keys: user_tg_id, teacher_type, teacher_id, 1, 2, 3, 4, 5...
     # values:
     # user_id - message.from_user.id
-    # teacher_type - practice/lecture/lecture+practice
+    # teacher_type - practice/lecture/both
     # teacher_id - int
-    # question_id (1-9) - 1-5
-    # question_id (10-12) - Так/Ні -> 1/0
-    # question_id (13-14) - free strings
+    # question_id - int
+
     await state.update_data(user_tg_id=user_tg_id, teacher_type=teacher_type)
 
     questions = await db_commands.get_all_questions()
 
     for question in questions:
         # check teacher_type
-        if question.type == 'both' or teacher_type == "lecture+practice" or question.type == teacher_type:
+        # both in question type means that this question must be used with lecture, practice and both teachers
+        # (for all teachers as open questions)
+
+        # both teacher means that these teachers teach lectures and practices
+        if question.type == 'both' or teacher_type == 'both' or question.type == teacher_type:
             # questions with answers 1-5
-            if question.id in range(1, 10):
+            if question.answer_format == '1_5':
                 await state.update_data({question.id: None})
                 await message.answer(question.question_text, reply_markup=await keyboards.poll_1_5_markup(question.id))
             # questions with answers Yes/No
-            elif question.id in range(10, 13):
+            elif question.answer_format == 'yes/no':
                 await state.update_data({question.id: None})
                 await message.answer(question.question_text, reply_markup=await keyboards.poll_yes_no_markup(question.id))
 
     # first open question - open microphone question
-    question_open_micro = await db_commands.get_question(13)
+    question_open_micro = await db_commands.get_first_open_q()
     await message.answer(question_open_micro.question_text + f'\n\n{config.skip_message}')
 
 
@@ -312,7 +320,7 @@ async def send_questions_cb(call: types.CallbackQuery, callback_data: dict, stat
     # lecture+practice type
     elif teacher_type_cb == '2':
         await call.message.answer('Ви заповнюєте викладача як лектора і практика')
-        await send_poll_questions('lecture+practice', call.message, call.from_user.id, state)
+        await send_poll_questions('both', call.message, call.from_user.id, state)
 
 
 # questions with keyboards
@@ -327,7 +335,7 @@ async def questions_btns_handler(call: types.CallbackQuery, callback_data: dict,
     if markup_type == '1_5':
         await call.message.edit_reply_markup(reply_markup=await keyboards.poll_1_5_markup(question_id, question_answer))
     elif markup_type == 'yes/no':
-        await call.message.edit_reply_markup(reply_markup= await keyboards.poll_yes_no_markup(question_id, question_answer))
+        await call.message.edit_reply_markup(reply_markup=await keyboards.poll_yes_no_markup(question_id, question_answer))
     await call.answer()
 
 
@@ -338,28 +346,17 @@ async def open_micro_handler(message: types.Message, state: FSMContext):
     if None in state_data.values():
         await message.answer('Дайте відповідь на усі попередні запитання')
     elif message.text == '/skip':
-        await state.update_data({13: ' '})
+        microphone = await db_commands.get_first_open_q()
+        await state.update_data({microphone.id: ''})
         await message.answer('Ви певні, що хочете пропустити питання?',
-                             reply_markup=await keyboards.open_q_confirmation_markup(13, False))
+                             reply_markup=await keyboards.open_q_confirmation_markup(13, True))
     else:
         await state.update_data({13: message.text})
         await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
-                             reply_markup=await keyboards.open_q_confirmation_markup(13, False))
+                             reply_markup=await keyboards.open_q_confirmation_markup(13, True))
 
 
-@dp.message_handler(state=PollStates.anonymous_question)
-async def anonymous_question_handler(message: types.Message, state: FSMContext):
-    if message.text == '/skip':
-        await state.update_data({14: ' '})
-        await message.answer('Ви певні, що хочете пропустити питання?',
-                             reply_markup=await keyboards.open_q_confirmation_markup(14, True))
-    else:
-        await state.update_data({14: message.text})
-        await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
-                         reply_markup=await keyboards.open_q_confirmation_markup(14, True))
-
-
-@dp.callback_query_handler(open_q_confrimation_cd.filter(),
+@dp.callback_query_handler(open_q_confirmation_cd.filter(),
                            state=[PollStates.open_micro_question, PollStates.anonymous_question])
 async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
     question_id: str = callback_data.get('question_id')
@@ -373,7 +370,7 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
         await call.message.edit_text('Відповідь прийнято.')
 
         if is_last_question != 1:
-            await state.set_state(PollStates.anonymous_question)
+            await state.set_state(PollStates.open_micro_question)
             await call.message.answer(anonymous_question.question_text + f'\n\n{config.skip_message}')
     else:
         await call.message.edit_text('Введіть нову відповідь.')
@@ -388,43 +385,37 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
 
         results_cb: dict = state_data
 
-        open_answers = dict()
-        open_answers[13] = results_cb[13]
-        open_answers[14] = results_cb[14]
-
-        del results_cb['user_tg_id'], results_cb['teacher_id'], results_cb['teacher_type'], results_cb[13], results_cb[14]
+        del results_cb['user_tg_id'], results_cb['teacher_id'], results_cb['teacher_type']
 
         results = {
-            'lecture': {
-                'questions_ids': [],
-                'marks': []
-            },
-            'practice': {
-                'questions_ids': [],
-                'marks': []
-            }
+            'lecture': {},
+            'practice': {}
         }
 
+        open_answers = dict()
         questions = await db_commands.get_all_questions()
         for question in questions:
             if question.id in results_cb.keys():
                 if question.type == 'lecture':
-                    results['lecture']['questions_ids'].append(question.id)
-                    results['lecture']['marks'].append(results_cb[question.id])
-                elif question.type == 'practice':
-                    results['practice']['questions_ids'].append(question.id)
-                    results['practice']['marks'].append(results_cb[question.id])
-                elif question.type == 'both':
-                    results['lecture']['questions_ids'].append(question.id)
-                    results['lecture']['marks'].append(results_cb[question.id])
+                    results['lecture'].update({f'{question.id}': results_cb[question.id]})
 
-                    results['practice']['questions_ids'].append(question.id)
-                    results['practice']['marks'].append(results_cb[question.id])
+                elif question.type == 'practice':
+                    results['practice'].update({f'{question.id}': results_cb[question.id]})
+                elif question.type == 'both':
+                    results['lecture'].update({f'{question.id}': results_cb[question.id]})
+
+                    results['practice'].update({f'{question.id}': results_cb[question.id]})
+                elif question.type == 'open':
+                    open_answers.update({f'{question.id}': results_cb[question.id]})
+
 
         if teacher_type == 'lecture':
             del results['practice']
         elif teacher_type == 'practice':
             del results['lecture']
+
+        print(results)
+        print(open_answers)
 
         await db_commands.add_vote(faculty, user.id, teacher_id, results, open_answers)
         await call.message.answer('Опитування закінчено, дані збережені.\nДякуємо за участь!\n\nНатисніть /start'
@@ -461,7 +452,6 @@ async def other_msg_handler(message: types.Message):
         return -1
 
     await message.answer(config.start_suggestion_msg)
-
 
 
 
