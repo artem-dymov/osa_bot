@@ -234,27 +234,33 @@ async def start_poll(message: types.Message, state: FSMContext):
 
             teacher = await db_commands.get_teacher_by_name(faculty, full_name)
 
-            faculty = faculties[faculties_ukr.index(user.faculty)]
             is_teacher_voted = await db_commands.is_teacher_voted(user.id, teacher.id, faculty)
             if teacher is not None and is_teacher_voted is False:
 
-                # TODO group checking
-                # student can vote for certain teacher if he has it in his group
-                # user_group = await db_commands.ge
+                # student can vote for certain teacher only if he has it in his group
+                user_group = await db_commands.get_group(user.group_id, faculty)
+                is_teacher_in_group = False
+                for group_teacher in user_group.teachers:
+                    if teacher.id == group_teacher['id']:
+                        is_teacher_in_group = True
 
-                await state.set_state(PollStates.minor_state)
-                await state.update_data(teacher_id=teacher.id)
+                if is_teacher_in_group:
 
-                # contains object opened with open()
-                file = await photo_getter.get_teacher_photo(user.faculty, teacher.id)
+                    await state.set_state(PollStates.minor_state)
+                    await state.update_data(teacher_id=teacher.id)
 
-                await message.answer_photo(file)
-                file.close()
+                    # contains object opened with open()
+                    file = await photo_getter.get_teacher_photo(user.faculty, teacher.id)
 
-                await message.answer(f"Ви обрали викладача: {full_name}.\n\nЩо викладав у вас даний викладач?\n\n"
-                                     f"{config.teacher_non_type_msg}\n\n"
-                                     f"{config.cancel_vote_msg}",
-                                     reply_markup=await keyboards.teacher_type_markup(faculty, teacher.id))
+                    await message.answer_photo(file)
+                    file.close()
+
+                    await message.answer(f"Ви обрали викладача: {full_name}.\n\nЩо викладав у вас даний викладач?\n\n"
+                                         f"{config.teacher_non_type_msg}\n\n"
+                                         f"{config.cancel_vote_msg}",
+                                         reply_markup=await keyboards.teacher_type_markup(faculty, teacher.id))
+                else:
+                    await message.answer('Вибачте, цього викладача немає у списку викладачів за Вашою групою.')
             elif teacher is not None:
                 await message.answer('Ви вже заповнювали цього викладача.')
             else:
