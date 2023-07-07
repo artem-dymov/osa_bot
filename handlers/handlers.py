@@ -212,7 +212,7 @@ async def cofirm_group_handler(call: types.CallbackQuery, callback_data: dict, s
                                           username=username, group_id=group_id)
 
         await state.finish()
-        await call.message.answer('Дані збережені!\n\nНатисніть /start щоб обрати викладача,'
+        await call.message.answer('Дані збережені!\n\nНатисніть /start щоб обрати викладача, '
                                   'або натисніть /list щоб переглянути список викладачів, які можуть бути '
                                   'Вам цікаві')
     else:
@@ -264,7 +264,8 @@ async def start_poll(message: types.Message, state: FSMContext):
                                          f"{config.cancel_vote_msg}",
                                          reply_markup=await keyboards.teacher_type_markup(faculty, teacher))
                 else:
-                    await message.answer('Вибачте, цього викладача немає у списку викладачів за Вашою групою.')
+                    await message.answer('Вибачте, цього викладача немає у списку викладачів за Вашою групою.\n\n'
+                                         'Натисніть /list щоб побачити список Ваших викладачів.')
             elif teacher is not None:
                 await message.answer('Ви вже заповнювали цього викладача.')
             else:
