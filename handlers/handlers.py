@@ -28,6 +28,7 @@ from typing import Union
 from osa_utils.photo_api import photo_getter
 
 from aiogram.utils.exceptions import Throttled
+from main import logging
 
 
 @dp.inline_handler()
@@ -75,6 +76,7 @@ async def is_throttled(message: types.Message):
     except Throttled:
         # If request is throttled, the `Throttled` exception will be raised
         await message.reply('Занадто багато запитів!')
+        logging.warning(f'Bot throttled. User <{message.chat.id}>')
         return True
     else:
         return False
@@ -107,6 +109,7 @@ async def bot_start(message: types.Message, state: FSMContext):
 
 async def save_user(faculty_index, tg_id, username, group_id):
     faculty_ukr = faculties_ukr[faculty_index]
+
     await db_commands.add_user(faculty_ukr=faculty_ukr, tg_id=tg_id, username=username, group_id=group_id)
 
 
@@ -421,12 +424,15 @@ async def open_q_conf_btns_handler(call: types.CallbackQuery, callback_data: dic
         elif teacher_type == 'practice':
             del results['lecture']
 
-        print(results)
-        print(open_answers)
-
-        await db_commands.add_vote(faculty, user.id, teacher_id, results, open_answers)
-        await call.message.answer('Опитування закінчено, дані збережені.\nДякуємо за участь!\n\nНатисніть /start'
+        logging.info(f'User <{user_tg_id}> voted for teacher <{teacher_id}>. Saving results...')
+        try:
+            await db_commands.add_vote(faculty, user.id, teacher_id, results, open_answers)
+            await call.message.answer('Опитування закінчено, дані збережені.\nДякуємо за участь!\n\nНатисніть /start'
                                   ' щоб почати нове опитування')
+        except Exception as e:
+            await call.message.answer('Помилка! Результати опитування не збережені!')
+            logging.critical(f'User <{user_tg_id}> - teacher <{teacher_id}> -- Saving error - {e}')
+
         await state.finish()
         await call.answer()
 
@@ -441,14 +447,20 @@ async def list_cmd_handler(message: types.Message):
         groups = await db_commands.get_all_groups(faculties[faculties_ukr.index(user.faculty)])
         for group in groups:
             if group.id == user.group_id:
-                for teacher in group.teachers:
-                    if teacher['full_name'] not in group_teachers:
+                try:
+                    for teacher in group.teachers:
                         if teacher['full_name'] not in group_teachers:
-                            group_teachers.append(teacher['full_name'])
+                            if teacher['full_name'] not in group_teachers:
+                                group_teachers.append(teacher['full_name'])
 
-        for i in group_teachers:
-            ls = ls + '\n' + i
-        await message.answer(f'Викладачі, які можуть бути вам цікаві:\n\n{ls}')
+                    for i in group_teachers:
+                        ls = ls + '\n' + i
+                    await message.answer(f'Викладачі, які можуть бути вам цікаві:\n\n{ls}')
+
+                except Exception as e:
+                    logging.warning(f'No teachers in group <{group.id}>. Chat with user <{user.id}>')
+                    await message.answer('На жаль, за Вашою групою не знайдено жодного викладача.\n'
+                                   'Якщо Ви вважаєте, що сталась помилка, то зверніться до студради Вашого факультету.')
     else:
         await message.answer('Ви не зареєстровані!')
 
