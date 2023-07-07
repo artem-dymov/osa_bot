@@ -309,6 +309,7 @@ async def send_poll_questions(teacher_type: str, message: types.Message, user_tg
                 await state.update_data({question.id: None})
                 await message.answer(question.question_text, reply_markup=await keyboards.poll_yes_no_markup(question.id))
 
+            await asyncio.sleep(1)
     # first open question - open microphone question
     question_open_micro = await db_commands.get_first_open_q()
     await message.answer(question_open_micro.question_text + f'\n\n{config.skip_message}')
