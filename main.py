@@ -7,6 +7,8 @@ from loader import bot
 import traceback
 import sys
 
+import logging
+logging.basicConfig(level=logging.INFO)
 
 async def on_startup(dp):
     print("Bot is running...")
@@ -18,10 +20,6 @@ async def on_shutdown(dp):
 
 
 if __name__ == '__main__':
-    if sys.argv:
-        print("if")
-    else:
-        print('else')
     from aiogram import executor
     from handlers.handlers import dp
 

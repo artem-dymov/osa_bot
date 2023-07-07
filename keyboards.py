@@ -49,19 +49,32 @@ async def group_confirmation_markup():
 teacher_cd: CallbackData = CallbackData('id_t', 'faculty_index', 'teacher_type', 'teacher_id')
 
 
-async def teacher_type_markup(faculty_index: str, teacher_id):
+async def teacher_type_markup(faculty_index: str, teacher):
     markup = InlineKeyboardMarkup()
-    markup.row(
-        InlineKeyboardButton(text='Лекції', callback_data=teacher_cd.new(faculty_index, 0, teacher_id))
-    )
+    match teacher.type:
+        case 'both':
+            markup.row(
+                InlineKeyboardButton(text='Лекції', callback_data=teacher_cd.new(faculty_index, 0, teacher.id))
+            )
 
-    markup.row(
-        InlineKeyboardButton(text='Практики', callback_data=teacher_cd.new(faculty_index, 1, teacher_id,))
-    )
+            markup.row(
+                InlineKeyboardButton(text='Практики', callback_data=teacher_cd.new(faculty_index, 1, teacher.id))
+            )
 
-    markup.row(
-        InlineKeyboardButton(text='Лек+Прак', callback_data=teacher_cd.new(faculty_index, 2, teacher_id))
-    )
+            markup.row(
+                InlineKeyboardButton(text='Лек+Прак', callback_data=teacher_cd.new(faculty_index, 2, teacher.id))
+            )
+
+        case 'lecture':
+            markup.row(
+                InlineKeyboardButton(text='Лекції', callback_data=teacher_cd.new(faculty_index, 0, teacher.id))
+            )
+
+        case _:
+            markup.row(
+                InlineKeyboardButton(text='Практики', callback_data=teacher_cd.new(faculty_index, 1, teacher.id))
+            )
+
     return markup
 
 

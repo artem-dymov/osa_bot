@@ -214,7 +214,7 @@ async def cofirm_group_handler(call: types.CallbackQuery, callback_data: dict, s
                                   'Вам цікаві')
     else:
         await state.set_state(Registering.group)
-        await call.message.answer('Відправ мені назву своєї групи')
+        await call.message.answer('Відправте мені назву своєї групи')
 
 
 @dp.message_handler(commands=['start_poll'])
@@ -240,9 +240,10 @@ async def start_poll(message: types.Message, state: FSMContext):
                 # student can vote for certain teacher only if he has it in his group
                 user_group = await db_commands.get_group(user.group_id, faculty)
                 is_teacher_in_group = False
-                for group_teacher in user_group.teachers:
-                    if teacher.id == group_teacher['id']:
-                        is_teacher_in_group = True
+                if len(user_group.teachers) > 0:
+                    for group_teacher in user_group.teachers:
+                        if teacher.id == group_teacher['id']:
+                            is_teacher_in_group = True
 
                 if is_teacher_in_group:
 
@@ -255,10 +256,10 @@ async def start_poll(message: types.Message, state: FSMContext):
                     await message.answer_photo(file)
                     file.close()
 
-                    await message.answer(f"Ви обрали викладача: {full_name}.\n\nЩо викладав у вас даний викладач?\n\n"
+                    await message.answer(f"Ви обрали викладача: {full_name}.\n\nЩо викладав у Вас даний викладач?\n\n"
                                          f"{config.teacher_non_type_msg}\n\n"
                                          f"{config.cancel_vote_msg}",
-                                         reply_markup=await keyboards.teacher_type_markup(faculty, teacher.id))
+                                         reply_markup=await keyboards.teacher_type_markup(faculty, teacher))
                 else:
                     await message.answer('Вибачте, цього викладача немає у списку викладачів за Вашою групою.')
             elif teacher is not None:
@@ -269,7 +270,7 @@ async def start_poll(message: types.Message, state: FSMContext):
         else:
             await message.answer('Неправильний формат!')
     else:
-        await message.answer('Ви не зареєстровані.')
+        await message.answer('Ви не зареєстровані. Натисніть /start')
 
 
 async def send_poll_questions(teacher_type: str, message: types.Message, user_tg_id: str, state: FSMContext):
