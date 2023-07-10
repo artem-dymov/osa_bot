@@ -459,7 +459,10 @@ async def list_cmd_handler(message: types.Message):
 
                     for i in group_teachers:
                         ls = ls + '\n' + i
-                    await message.answer(f'Викладачі, які можуть бути вам цікаві:\n\n{ls}')
+                    if ls.strip() != '':
+                        await message.answer(f'Викладачі, які можуть бути вам цікаві:\n\n{ls}')
+                    else:
+                        raise Exception
 
                 except Exception as e:
                     logging.warning(f'No teachers in group <{group.id}>. Chat with user <{user.id}>')
