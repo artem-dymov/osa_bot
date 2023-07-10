@@ -219,6 +219,8 @@ async def cofirm_group_handler(call: types.CallbackQuery, callback_data: dict, s
         await state.set_state(Registering.group)
         await call.message.answer('Відправте мені назву своєї групи')
 
+    await call.message.edit_reply_markup(None)
+
 
 @dp.message_handler(commands=['start_poll'])
 async def start_poll(message: types.Message, state: FSMContext):
