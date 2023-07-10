@@ -365,7 +365,8 @@ async def open_micro_handler(message: types.Message, state: FSMContext):
         await message.answer('Ви певні, що хочете пропустити питання?',
                              reply_markup=await keyboards.open_q_confirmation_markup(13, True))
     else:
-        await state.update_data({13: message.text})
+        microphone = await db_commands.get_first_open_q()
+        await state.update_data({microphone.id: message.text})
         await message.answer(f'Ви певні, що хочете зберегти цю відповідь?\n\n{message.text}',
                              reply_markup=await keyboards.open_q_confirmation_markup(13, True))
 
